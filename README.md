@@ -1,6 +1,6 @@
-# ERP Page Forge — 完整公开源码候选
+# ERP Page Forge
 
-ERP 高频页面生成工具与 DSH 插件。包含原创 TypeScript 插件、Python 生成及验收引擎、浏览器端 Studio、页面契约、六类骨架和实体配方。当前版本 `1.8.0`。这是供代码审阅和后续发布的源码候选，尚未网络发布。
+ERP 高频页面生成工具与 DSH 插件。包含原创 TypeScript 插件、Python 生成及验收引擎、浏览器端 Studio、页面契约、六类骨架和实体配方。当前版本 `1.8.0`。完整源码已发布于 [wangyuxin-beeo/erp-page-forge](https://github.com/wangyuxin-beeo/erp-page-forge)，构建方式与验证范围见下文。许可维持 `UNLICENSED`。
 
 ## 功能范围
 
