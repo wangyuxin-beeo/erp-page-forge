@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>物料主数据 · 交流伺服电机 ASD-B2 750W · 示例 ERP</title>
+<!-- 依赖规范版本：skill 1.2.0（pageSpec 1.0 / archetypes 1.0 / recipes 1.0 / tokens 1.0）· ERP Page Forge -->
+<!-- 原型：A3 主数据详情页 · ERP Page Forge 生成 · 零依赖单文件 · 虚构演示数据 -->
+<style>
+:root{
+ --brand:#2b5cff;--brand-weak:#eef3ff;--brand-strong:#1c46d6;
+ --ok:#12a150;--ok-weak:#e7f6ee;--warn:#e08b00;--warn-weak:#fdf3e2;
+ --danger:#e5484d;--danger-weak:#fdecec;--purple:#7c5cff;--purple-weak:#f0edff;
+ --bg:#f4f6fa;--surface:#fff;--line:#e6e9f0;--line-strong:#d5d9e3;
+ --text:#1c2230;--text-2:#5a6478;--text-3:#8b93a5;
+ --side-bg:#111827;--side-hover:#1b2437;--side-on:#22304d;--side-text:#a7b0c4;
+ --sh:0 1px 2px rgba(16,24,40,.05);--sh2:0 24px 48px rgba(16,24,40,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+/* 金额/数量/日期列一律不折行，否则窄列会把 2026-09-17 折成两行 */
+td.num{white-space:nowrap}
+.app{display:flex;min-height:100vh}
+.side{width:216px;flex:0 0 216px;background:var(--side-bg);color:var(--side-text);position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:16px;color:#fff;font-weight:600;font-size:14.5px;border-bottom:1px solid #1b2437}
+.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#5b86ff,#2b5cff);display:grid;place-items:center;font-size:11px}
+.nav{flex:1;overflow:auto;padding:8px 10px 16px}
+.nav-title{padding:12px 8px 6px;font-size:11px;letter-spacing:1px;color:#5d6b85}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;margin-bottom:2px;border-radius:8px;font-size:13.5px;color:var(--side-text);text-decoration:none}
+.nav a:hover{background:var(--side-hover);color:#fff}
+.nav a.on{background:var(--side-on);color:#fff;box-shadow:inset 2px 0 0 var(--brand)}
+.ico{width:16px;height:16px;border-radius:5px;background:#2c3852;flex:0 0 16px}
+.nav a.on .ico{background:var(--brand)}
+.me{padding:12px 14px;border-top:1px solid #1b2437;display:flex;gap:10px;align-items:center;font-size:12.5px;color:#8d97ab}
+.avatar{width:28px;height:28px;border-radius:8px;background:#2c3852;display:grid;place-items:center;color:#cbd5e6;font-size:12px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{height:56px;flex:0 0 56px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:20}
+.crumb{font-size:13px;color:var(--text-3)} .crumb b{color:var(--text)}
+.content{padding:16px 20px 28px;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--sh)}
+.btn{height:34px;padding:0 14px;border-radius:6px;border:1px solid var(--line-strong);background:#fff;color:var(--text);font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:.15s}
+.btn:hover{border-color:#b9c0d0;background:#fafbfe}
+.btn-p{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn-p:hover{background:var(--brand-strong)}
+.btn-dg{color:var(--danger);border-color:#f8cdce}
+.btn-dg:hover{background:var(--danger-weak)}
+/* 头部摘要 */
+.hero{padding:18px 20px;display:flex;justify-content:space-between;gap:20px;align-items:flex-start}
+.hero-l{display:flex;gap:14px}
+.micon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#eef3ff,#dbe6ff);color:var(--brand);display:grid;place-items:center;font-size:19px;font-weight:600;flex:0 0 48px}
+.h1{font-size:19px;font-weight:600;margin:0 0 6px}
+.meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--text-3)}
+.tag{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;border:1px solid transparent;white-space:nowrap}
+.tag i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.t-ok{color:var(--ok);background:var(--ok-weak);border-color:#c9ebd9}
+.t-warn{color:var(--warn);background:var(--warn-weak);border-color:#f6e0b8}
+.t-dg{color:var(--danger);background:var(--danger-weak);border-color:#f8cdce}
+.t-br{color:var(--brand);background:var(--brand-weak);border-color:#cfdcff}
+.t-pu{color:var(--purple);background:var(--purple-weak);border-color:#ddd6ff}
+.t-nm{color:var(--text-2);background:#f1f3f7;border-color:#e4e7ee}
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kpi{padding:14px 16px;border-right:1px solid var(--line)}
+.kpi:last-child{border-right:none}
+.kpi .k{font-size:12.5px;color:var(--text-3);margin-bottom:6px}
+.kpi .v{font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.kpi .u{font-size:12.5px;color:var(--text-3);font-weight:400;margin-left:4px}
+.kpi .d{font-size:12px;margin-top:5px}
+.up{color:var(--warn)} .down{color:var(--ok)}
+/* Tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 8px}
+.tab{padding:12px 16px;font-size:13.5px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none}
+.tab:hover{color:var(--brand)}
+.tab.on{color:var(--brand);border-bottom-color:var(--brand);font-weight:500}
+.pane{padding:18px 20px;display:none}
+.pane.on{display:block}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 20px;margin:0}
+.kv .item .k{font-size:12.5px;color:var(--text-3);margin-bottom:5px}
+.kv .item .v{font-size:13.5px}
+.tbl-wrap{overflow:auto}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+th{background:#fafbfd;color:var(--text-2);font-weight:500;font-size:12.5px;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--line)}
+tbody tr:hover{background:#fafbff}
+tbody tr:last-child td{border-bottom:none}
+.r{text-align:right} .c{text-align:center}
+.code{color:var(--brand);font-weight:500;cursor:pointer}
+.code:hover{text-decoration:underline}
+.bar-bg{height:6px;border-radius:999px;background:#eef0f5;overflow:hidden;min-width:70px}
+.bar-in{height:100%;border-radius:999px;background:var(--brand)}
+.bar-in.w{background:var(--warn)} .bar-in.d{background:var(--danger)}
+/* 时间线 */
+.tl{position:relative;padding-left:24px}
+.tl:before{content:'';position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tl-item{position:relative;padding:0 0 20px 0}
+.tl-item:before{content:'';position:absolute;left:-24px;top:5px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--line-strong)}
+.tl-item.hl:before{border-color:var(--brand);background:var(--brand)}
+.tl-item .t{font-size:13.5px;font-weight:500;margin-bottom:3px}
+.tl-item .d{font-size:12.5px;color:var(--text-3)}
+.tl-item .body{margin-top:7px;font-size:13px;color:var(--text-2);background:#fafbfd;border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+.toast{position:fixed;left:50%;top:22px;transform:translate(-50%,-140%);background:#1c2230;color:#fff;padding:10px 18px;border-radius:8px;font-size:13.5px;z-index:99;transition:.24s;box-shadow:var(--sh2)}
+.toast.on{transform:translate(-50%,0)}
+.foot{font-size:12px;color:var(--text-3);text-align:center}
+@media (max-width:1100px){.side{display:none}.kpis,.kv{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo">示例</span> 示例 ERP</div>
+    <nav class="nav">
+      <div class="nav-title">工作台</div>
+      <a href="#"><span class="ico"></span>我的工作台</a>
+      <div class="nav-title">业务管理</div>
+      <a href="#"><span class="ico"></span>采购管理</a>
+      <a href="#"><span class="ico"></span>销售管理</a>
+      <a href="#"><span class="ico"></span>库存管理</a>
+      <a href="#"><span class="ico"></span>生产管理</a>
+      <div class="nav-title">财务与基础</div>
+      <a href="#"><span class="ico"></span>应收应付</a>
+      <a href="#" class="on"><span class="ico"></span>基础数据</a>
+      <a href="#"><span class="ico"></span>系统设置</a>
+    </nav>
+    <div class="me"><span class="avatar">王</span><div>王磊<div>基础数据组 · 主数据专员</div></div></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div class="crumb">基础数据 / 物料主数据 / <b>MAT-2026-0012</b></div>
+      <div class="me" style="border:0;padding:0;color:var(--text-3)"><span class="avatar" style="background:#eef3ff;color:var(--brand)">王</span>王磊</div>
+    </header>
+
+    <main class="content">
+      <section class="card">
+        <div class="hero">
+          <div class="hero-l">
+            <div class="micon">伺</div>
+            <div>
+              <h1 class="h1">交流伺服电机 ASD-B2 750W</h1>
+              <div class="meta">
+                <span class="num" id="mcode">MAT-2026-0012</span><span>·</span>
+                <span id="mstatus" class="tag t-ok"><i></i>启用</span>
+                <span class="tag t-br">版本 V1.2</span>
+                <span class="tag t-nm">成品 / 电气件</span>
+                <span>· 最后修改 2026-08-28 14:20 由 王磊</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="toast('打开变更向导：修改主数据需走变更审批（人工复核）')">变更申请</button>
+            <button class="btn" onclick="toast('已生成条码标签，可在打印中心下载 PDF')">打印标签</button>
+            <button class="btn btn-dg" id="btnToggle" onclick="toggleStatus()">停用</button>
+          </div>
+        </div>
+        <div class="kpis" style="border-top:1px solid var(--line)">
+          <div class="kpi"><div class="k">库存数量（全仓合计）</div><div class="v">486<span class="u">台</span></div><div class="d down">较上月 -32 台</div></div>
+          <div class="kpi"><div class="k">可用库存</div><div class="v">412<span class="u">台</span></div><div class="d" style="color:var(--text-3)">锁定 74 台</div></div>
+          <div class="kpi"><div class="k">安全库存</div><div class="v">200<span class="u">台</span></div><div class="d" style="color:var(--text-3)">当前为安全库存的 2.4 倍</div></div>
+          <div class="kpi"><div class="k">标准成本</div><div class="v">¥4,296.00</div><div class="d up">较上期 +¥86.00（采购价上调）</div></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="tabs">
+          <button class="tab on" onclick="goTab(this,'p1')">基本信息</button>
+          <button class="tab" onclick="goTab(this,'p2')">库存分布（3 仓）</button>
+          <button class="tab" onclick="goTab(this,'p3')">关联单据（6）</button>
+          <button class="tab" onclick="goTab(this,'p4')">变更记录（5）</button>
+        </div>
+
+        <div class="pane on" id="p1">
+          <dl class="kv">
+            <div class="item"><div class="k">物料编码</div><div class="v num">MAT-2026-0012</div></div>
+            <div class="item"><div class="k">物料名称</div><div class="v">交流伺服电机 ASD-B2 750W</div></div>
+            <div class="item"><div class="k">规格型号</div><div class="v">ASD-B2-0721-B / 750W / 220V</div></div>
+            <div class="item"><div class="k">物料类型</div><div class="v">成品</div></div>
+            <div class="item"><div class="k">计量单位</div><div class="v">台</div></div>
+            <div class="item"><div class="k">物料分组</div><div class="v">电气件 / 驱动与伺服</div></div>
+            <div class="item"><div class="k">品牌</div><div class="v">示例品牌</div></div>
+            <div class="item"><div class="k">税率</div><div class="v">13% 增值税</div></div>
+            <div class="item"><div class="k">批次管理</div><div class="v">是</div></div>
+            <div class="item"><div class="k">序列号管理</div><div class="v">是</div></div>
+            <div class="item"><div class="k">最大库存</div><div class="v num">800 台</div></div>
+            <div class="item"><div class="k">采购提前期</div><div class="v num">21 天</div></div>
+            <div class="item"><div class="k">默认供应商</div><div class="v">苏州联动电子（示例）</div></div>
+            <div class="item"><div class="k">默认货位</div><div class="v">原料仓 / A-03-02</div></div>
+            <div class="item"><div class="k">质检要求</div><div class="v">入库需全检</div></div>
+            <div class="item"><div class="k">生效日期</div><div class="v num">2026-01-06</div></div>
+            <div class="item" style="grid-column:span 4"><div class="k">备注</div><div class="v">用于 3 号车间产线伺服系统，替代旧型号 ASD-A2（已于 2026-01 停用）。</div></div>
+          </dl>
+        </div>
+
+        <div class="pane" id="p2">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>仓库</th><th>库位</th><th class="r">账面数量</th><th class="r">可用数量</th><th class="r">锁定数量</th><th class="r">在途数量</th><th class="c">库龄</th><th class="c">库存状态</th></tr></thead>
+              <tbody>
+                <tr><td>原料仓</td><td>A-03-02</td><td class="r num">268</td><td class="r num">246</td><td class="r num">22</td><td class="r num">80</td><td class="c num">38 天</td><td class="c"><span class="tag t-ok"><i></i>充足</span></td></tr>
+                <tr><td>成品仓</td><td>B-01-11</td><td class="r num">192</td><td class="r num">148</td><td class="r num">44</td><td class="r num">0</td><td class="c num">62 天</td><td class="c"><span class="tag t-ok"><i></i>充足</span></td></tr>
+                <tr><td>在途仓</td><td>—</td><td class="r num">26</td><td class="r num">18</td><td class="r num">8</td><td class="r num">26</td><td class="c num">12 天</td><td class="c"><span class="tag t-ok"><i></i>充足</span></td></tr>
+              </tbody>
+              <tfoot><tr style="background:#fafbfd;font-weight:600"><td colspan="2">合计</td><td class="r num">486</td><td class="r num">412</td><td class="r num">74</td><td class="r num">106</td><td class="c">—</td><td class="c">安全库存 200 台</td></tr></tfoot>
+            </table>
+          </div>
+          <div style="margin-top:12px;font-size:12.5px;color:var(--text-3)">库存状态判定规则：账面数量 &lt; 安全库存 → 预警；库龄 &gt; 180 天 → 呆滞；其余为充足。</div>
+        </div>
+
+        <div class="pane" id="p3">
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>单据类型</th><th>单据编号</th><th>业务伙伴</th><th class="r">数量</th><th class="c">单据日期</th><th class="c">状态</th><th class="c">操作</th></tr></thead>
+              <tbody>
+                <tr><td>采购订单</td><td class="num code" onclick="toast('跳转采购订单 PO-20260902-0031（演示）')">PO-20260902-0031</td><td>苏州联动电子（示例）</td><td class="r num">80</td><td class="c num">2026-09-02</td><td class="c"><span class="tag t-pu"><i></i>部分到货</span></td><td class="c"><button class="btn-l" style="border:none;background:none;color:var(--brand);cursor:pointer;font-size:13px" onclick="toast('查看单据（演示）')">查看</button></td></tr>
+                <tr><td>销售订单</td><td class="num code" onclick="toast('跳转销售订单 SO-20260915-0076（演示）')">SO-20260915-0076</td><td>无锡双鹿机械（示例）</td><td class="r num">40</td><td class="c num">2026-09-15</td><td class="c"><span class="tag t-br"><i></i>已确认</span></td><td class="c"><button class="btn-l" style="border:none;background:none;color:var(--brand);cursor:pointer;font-size:13px" onclick="toast('查看单据（演示）')">查看</button></td></tr>
+                <tr><td>生产领料单</td><td class="num code" onclick="toast('跳转领料单 MI-20260912-0118（演示）')">MI-20260912-0118</td><td>3 号车间</td><td class="r num">-36</td><td class="c num">2026-09-12</td><td class="c"><span class="tag t-ok"><i></i>已过账</span></td><td class="c"><button class="btn-l" style="border:none;background:none;color:var(--brand);cursor:pointer;font-size:13px" onclick="toast('查看单据（演示）')">查看</button></td></tr>
+                <tr><td>采购入库单</td><td class="num code" onclick="toast('跳转入库单 GR-20260908-0076（演示）')">GR-20260908-0076</td><td>苏州联动电子（示例）</td><td class="r num">54</td><td class="c num">2026-09-08</td><td class="c"><span class="tag t-ok"><i></i>已入库</span></td><td class="c"><button class="btn-l" style="border:none;background:none;color:var(--brand);cursor:pointer;font-size:13px" onclick="toast('查看单据（演示）')">查看</button></td></tr>
+                <tr><td>库存盘点单</td><td class="num code" onclick="toast('跳转盘点单 ST-20260831-0009（演示）')">ST-20260831-0009</td><td>原料仓</td><td class="r num">-2</td><td class="c num">2026-08-31</td><td class="c"><span class="tag t-warn"><i></i>差异待审</span></td><td class="c"><button class="btn-l" style="border:none;background:none;color:var(--brand);cursor:pointer;font-size:13px" onclick="toast('查看单据（演示）')">查看</button></td></tr>
+                <tr><td>销售报价单</td><td class="num code" onclick="toast('跳转报价单 QU-20260828-0052（演示）')">QU-20260828-0052</td><td>杭州科锐自动化（示例）</td><td class="r num">120</td><td class="c num">2026-08-28</td><td class="c"><span class="tag t-nm"><i></i>已过期</span></td><td class="c"><button class="btn-l" style="border:none;background:none;color:var(--brand);cursor:pointer;font-size:13px" onclick="toast('查看单据（演示）')">查看</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="pane" id="p4">
+          <div class="tl">
+            <div class="tl-item hl"><div class="t">标准成本调整：¥4,210.00 → ¥4,296.00</div><div class="d">2026-08-28 14:20 · 王磊 · 采购价上调（V1.2）</div><div class="body">调整原因：供应商联动电子 2026Q3 报价上调 2.0%，同步更新标准成本与销售报价基准。已由财务复核确认。</div></div>
+            <div class="tl-item"><div class="t">规格型号修订：新增 220V 电压标注</div><div class="d">2026-06-11 10:05 · 王磊 · V1.1</div><div class="body">原型号 ASD-B2-0721-B 未标注电压等级，导致采购错单 1 次，现统一补全为 ASD-B2-0721-B / 750W / 220V。</div></div>
+            <div class="tl-item"><div class="t">安全库存调整：150 → 200 台</div><div class="d">2026-04-22 09:40 · 赵敏 · V1.0</div><div class="body">近 3 个月月均耗用上升至 68 台，按 3 个月用量将安全库存上调至 200 台。</div></div>
+            <div class="tl-item"><div class="t">新增序列号管理</div><div class="d">2026-03-15 16:12 · 王磊 · V1.0</div><div class="body">因客户售后追溯要求，启用序列号管理，入库需逐台登记铭牌序列号。</div></div>
+            <div class="tl-item"><div class="t">物料创建</div><div class="d">2026-01-06 11:00 · 王磊</div><div class="body">创建物料主数据，替代旧型号 ASD-A2（已停用）。</div></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="foot">本页数据为演示用虚构数据，非真实业务数据 · 由 ERP Page Forge 生成（原型 A3 主数据详情页）</div>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+function goTab(el,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on'); document.getElementById(id).classList.add('on');
+}
+function toggleStatus(){
+  const t=document.getElementById('mstatus');
+  const off = t.classList.contains('t-ok');
+  t.className = 'tag ' + (off?'t-dg':'t-ok');
+  t.innerHTML = '<i></i>' + (off?'已停用':'启用');
+  const btn=document.getElementById('btnToggle');
+  btn.textContent = off?'启用':'停用';
+  btn.className = 'btn ' + (off?'':'btn-dg');
+  toast(off?'物料已停用：将不可用于新建采购/销售单据，历史单据保留':'物料已启用：可正常用于业务单据');
+}
+let tid; function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(tid); tid=setTimeout(()=>t.classList.remove('on'),2400); }
+</script>
+</body>
+</html>

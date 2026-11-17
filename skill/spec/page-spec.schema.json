@@ -1,0 +1,343 @@
+{
+  "specVersion": "1.0",
+  "title": "PageSpec",
+  "meta": {
+    "purpose": "唯一生成输入。生成器只吃这份结构，不再读自由描述；校验器也只按这份结构做契约断言。",
+    "scope": "只约束「结构与交互」——原型、区块、字段元数据、动作、状态机、数据规模。字段的业务语义（该怎么算、业务上什么含义）留在 references/*.md，不进 schema。",
+    "style": "JSON Schema draft-07 的子集（未写 $schema 键，保持交付物零外链）。",
+    "source_of_truth": "每个可默认项的取值出处必须可追溯，见 defaults 段与各字段的 provenance 枚举。"
+  },
+
+  "type": "object",
+  "required": ["specVersion", "page", "archetype", "entity", "fields"],
+  "properties": {
+    "specVersion": { "type": "string", "const": "1.0" },
+
+    "page": {
+      "type": "object",
+      "required": ["name", "module", "breadcrumb"],
+      "properties": {
+        "name": { "type": "string", "description": "页面标题，如「许可证变更审批」" },
+        "module": { "type": "string", "description": "所属模块，用于侧边栏与面包屑一级" },
+        "menu": { "type": "string", "description": "菜单二级，缺省取 page.name" },
+        "breadcrumb": {
+          "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 3,
+          "description": "面包屑，ERP 惯例为三级：模块 / 菜单 / 当前页"
+        }
+      }
+    },
+
+    "archetype": {
+      "type": "string",
+      "enum": ["A1", "A2", "A3", "A4", "A5", "A6"],
+      "description": "主原型，决定骨架与必需元素断言。取值含义见 spec/archetypes.json。"
+    },
+    "extends": {
+      "type": "array", "items": { "type": "string" },
+      "description": "延伸区（组合原型），如 A1 挂右侧 Drawer、A5 内嵌 A3 详情。延伸区只附加元素，不改主原型骨架顺序。"
+    },
+
+    "regions": {
+      "type": "array",
+      "description": "★ 组件契约：页面区块的语义声明。渲染层按 render_mode 把 component 映射成具体实现（见 spec/components.json）；本文件里不出现任何组件库的组件名。缺省时按 archetype 的 regions 推导，故对既有 PageSpec 无破坏。",
+      "items": {
+        "type": "object",
+        "required": ["component"],
+        "properties": {
+          "component": {
+            "type": "string",
+            "description": "语义组件 id，取值见 spec/components.json 的 components 键 —— 刻意不在此处枚举，避免同一份清单两处维护"
+          },
+          "slot": {
+            "type": "string",
+            "enum": ["sidebar", "topbar", "header", "body", "aside", "footer", "overlay", "none"],
+            "description": "在页面框架中的位置；影响吸附、联动这类依赖位置的能力是否成立"
+          },
+          "capabilities": {
+            "type": "array", "items": { "type": "string" },
+            "description": "启用的能力项，取值见 components.json 的 capabilities。同一组件的不同形态靠它区分（如 A4「页面头（含时间范围）」= page-header + time-range）"
+          },
+          "label": { "type": "string", "description": "该区块的业务名称，如「出入库明细」" },
+          "note": { "type": "string", "description": "仅人读" }
+        }
+      }
+    },
+
+    "nav": {
+      "type": "object",
+      "description": "导航形态（术语层落地，见 spec/ui-taxonomy.json 的 navigation 族）。缺省按 archetype 与 regions 推断；单张截图无法判定的项保持缺省，不猜值。",
+      "properties": {
+        "placement": { "type": "string", "enum": ["sidebar", "topbar", "both", "none"], "default": "sidebar", "description": "全局导航位置" },
+        "sticky": { "type": "boolean", "default": true, "description": "吸顶：滚动时固定" },
+        "float": { "type": "boolean", "default": false, "description": "悬浮：脱离文档流并带投影" },
+        "collapsible": { "type": "boolean", "default": false, "description": "可折叠：可收起为图标模式" },
+        "scrollSpy": {
+          "type": "boolean", "default": false,
+          "description": "联动导航。★ 单张截图不可判定 —— 证据不足时标 unsupported 而非猜值，见 references/quality-checklist.md"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "children": { "type": "array", "items": { "type": "string" } },
+              "active": { "type": "boolean", "description": "是否当前选中项（同组唯一）" }
+            }
+          }
+        }
+      }
+    },
+
+    "entity": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "description": "业务实体，如「许可证变更申请」" },
+        "recipeRef": { "type": "string", "description": "命中的字段配方条目；未命中写「通用字段骨架」" },
+        "codeRule": { "type": "string", "description": "编码规则，如「LIC-年份-序号」，供 mock 数据生成" }
+      }
+    },
+
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "description": "字段表。顺序即呈现顺序：先身份后业务，先编码后名称，先金额后时间。",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "provenance"],
+        "properties": {
+          "name": { "type": "string", "description": "业务术语，直接暴露给用户，禁 orderId 这类英文键名" },
+          "type": {
+            "type": "string",
+            "enum": ["text", "code", "enum", "number", "money", "date", "datetime", "person", "org", "bool", "textarea", "attachment"],
+            "description": "字段类型，决定控件与格式"
+          },
+          "required": { "type": "boolean", "default": false, "description": "是否必填（表单页显示红色星号）" },
+          "unique": { "type": "boolean", "default": false, "description": "是否唯一键，如许可证号" },
+          "options": {
+            "type": "array", "items": { "type": "string" },
+            "description": "type=enum 时的下拉项，顺序即业务优先级"
+          },
+          "control": {
+            "type": "string",
+            "enum": ["input", "select", "date-range", "tags", "readonly"],
+            "description": "控件形态。留空则由 type 推导：enum→select，date→date-range，其余 input。"
+          },
+          "align": { "type": "string", "enum": ["left", "right", "center"], "description": "列表列对齐；money/number→right，date→center，其余 left" },
+          "precision": { "type": "integer", "minimum": 0, "maximum": 4, "description": "小数位；money 默认 2，数量按单位 0-3" },
+          "unit": { "type": "string", "description": "计量单位，如台/个/kg" },
+          "note": { "type": "string", "description": "业务说明，仅人读，不参与断言" },
+          "provenance": {
+            "type": "string",
+            "enum": ["user", "recipe", "inferred", "fallback"],
+            "description": "★ 可解释性要求：user=用户明确指定；recipe=取自字段配方；inferred=从页面名/实体推断；fallback=规范兜底默认值。生成前必须回显，用户可逐条改。"
+          }
+        }
+      }
+    },
+
+    "query": {
+      "type": "object",
+      "description": "查询区条件（A1/A6 必需；其余原型可选）",
+      "properties": {
+        "conditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["field"],
+            "properties": {
+              "field": { "type": "string" },
+              "control": { "type": "string", "enum": ["input", "select", "date-range", "multi-select"] },
+              "default": { "type": "string", "description": "缺省值为空，不预填业务值" }
+            }
+          }
+        }
+      }
+    },
+
+    "columns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field"],
+        "properties": {
+          "field": { "type": "string" },
+          "sortable": { "type": "boolean", "default": true },
+          "fixed": { "type": "string", "enum": ["left", "right"] },
+          "summary": { "type": "string", "enum": ["sum", "count", "none"], "description": "汇总行口径" }
+        }
+      }
+    },
+
+    "actions": {
+      "type": "array",
+      "description": "动作清单。scope 决定落点，allowedStates 决定按钮可见性（ERP 专业度分水岭）。",
+      "items": {
+        "type": "object",
+        "required": ["name", "scope"],
+        "properties": {
+          "name": { "type": "string", "description": "按钮文案，如「批量审核」" },
+          "scope": { "type": "string", "enum": ["header", "row", "bulk", "form-footer", "panel-footer"] },
+          "icon": { "type": "string" },
+          "allowedStates": {
+            "type": "array", "items": { "type": "string" },
+            "description": "仅在这些状态下可见；空数组或缺省 = 始终可见"
+          },
+          "confirm": { "type": "boolean", "default": false, "description": "是否二次确认；破坏性动作（驳回/作废/停用）必须为 true" },
+          "requiresInput": {
+            "type": "object",
+            "properties": {
+              "field": { "type": "string" },
+              "required": { "type": "boolean", "default": true },
+              "prompt": { "type": "string" }
+            },
+            "description": "点击后需先填意见/原因再执行，如驳回原因、转办接收人"
+          },
+          "primary": { "type": "boolean", "default": false, "description": "是否主色实心按钮；每屏 ≤1 个" }
+        }
+      }
+    },
+
+    "statusMachine": {
+      "type": "object",
+      "required": ["states", "initial"],
+      "properties": {
+        "states": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "tone"],
+            "properties": {
+              "name": { "type": "string" },
+              "tone": { "type": "string", "enum": ["brand", "ok", "warn", "danger", "neutral", "purple"], "description": "语义色，决定胶囊标签配色" },
+              "terminal": { "type": "boolean", "default": false, "description": "是否终态（终态不再流转）" },
+              "intermediate": { "type": "boolean", "default": false, "description": "是否中间态：只在流转过程中短暂出现，初始 mock 数据不覆盖属正常（枚举覆盖断言会跳过它，避免假失败）" }
+            }
+          }
+        },
+        "initial": { "type": "string" },
+        "transitions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to", "action"],
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "action": { "type": "string", "description": "触发动作名，须与 actions[].name 对应" }
+            }
+          }
+        },
+        "nodeFlow": {
+          "type": "array", "items": { "type": "string" },
+          "description": "节点式流程（A5 用）：审批节点顺序，决定时间线长度与进度索引"
+        }
+      }
+    },
+
+    "permissions": {
+      "type": "array",
+      "description": "业务规则。生成类能力必须保留人工复核，见 SKILL.md 第 9 节。",
+      "items": {
+        "type": "object",
+        "required": ["rule"],
+        "properties": {
+          "rule": { "type": "string", "description": "如「提交人不可自审」" },
+          "effect": { "type": "string", "description": "规则生效时的界面表现，如「隐藏同意/驳回按钮」" }
+        }
+      }
+    },
+
+    "data": {
+      "type": "object",
+      "properties": {
+        "minRows": { "type": "integer", "default": 12, "description": "列表页 ≥12 行（够触发分页）；看板 4 KPI；审批待办 ≥6 条" },
+        "currency": { "type": "string", "default": "¥", "description": "统一 ¥1,234,567.89（两位小数 + 千分位）" },
+        "dateFormat": { "type": "string", "default": "YYYY-MM-DD" },
+        "mustHaveException": { "type": "boolean", "default": true, "description": "必须有 >0 条预警/异常数据，不可全是正常态" },
+        "disclaimer": { "type": "string", "default": "演示用虚构数据，与任何真实企业无关" }
+      }
+    },
+
+    "stack": {
+      "type": "object",
+      "description": "目标技术栈。缺省 = 产出单文件 HTML。",
+      "properties": {
+        "target": { "type": "string", "enum": ["standalone", "react", "vue", "miniprogram"], "default": "standalone" },
+        "projectRoot": { "type": "string", "description": "已有项目时的根目录，Step 0 探测对象" },
+        "profile": {
+          "type": "object",
+          "description": "「项目约定画像」——Step 0 探测产物，工程实现层一律服从它",
+          "properties": {
+            "framework": { "type": "string" },
+            "language": { "type": "string", "enum": ["js", "ts"] },
+            "stateManagement": { "type": "string" },
+            "routing": { "type": "string" },
+            "styling": { "type": "string", "enum": ["css", "css-modules", "scss", "less", "tailwind", "styled-components"] },
+            "alias": { "type": "string" },
+            "verifyCommand": { "type": "string", "description": "目标栈编译级验证命令，如 npm run build / vue-tsc --noEmit" }
+          }
+        }
+      }
+    },
+
+    "tokens": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["skill-default", "inherit-project"], "default": "skill-default" },
+        "sourceFile": { "type": "string", "description": "inherit-project 时，项目令牌文件路径" },
+        "note": { "type": "string", "description": "inherit-project 时整表替换，产物中零 Skill 原色值残留" }
+      }
+    },
+
+    "interactionHints": {
+      "type": "object",
+      "description": "验收断言用的锚点选择器。通用 driver 靠文本与语义启发式驱动页面；产物类名千差万别时在这里声明锚点，driver 优先使用 —— 这是把「无法自动驱动」变成「可判定」的开关。",
+      "properties": {
+        "taskCard": { "type": "string", "description": "列表/任务卡片元素，如 .ap-task-line" },
+        "detailAnchor": { "type": "string", "description": "详情区标题元素，用于判断切换/推进是否生效，如 .ap-detail-title" },
+        "todoBadge": { "type": "string", "description": "待办计数所在元素，如 .ap-tab" },
+        "dialog": { "type": "string", "description": "弹窗容器，如 .ap-modal" },
+        "dialogInput": { "type": "string", "description": "弹窗内输入控件，如 .ap-modal-body textarea" },
+        "table": { "type": "string", "description": "数据表格，如 table.data-table" },
+        "summaryRow": { "type": "string", "description": "汇总行，如 tfoot tr" }
+      }
+    },
+
+    "custom": {
+      "type": "array",
+      "description": "★ 逃生舱：模板覆盖不到的诉求写这里，生成层回退全量生成。防止过度模板化扼杀变体。",
+      "items": {
+        "type": "object",
+        "properties": {
+          "requirement": { "type": "string" },
+          "reason": { "type": "string", "description": "为什么标准模板表达不了" }
+        }
+      }
+    }
+  },
+
+  "defaults": {
+    "note": "三问的默认值全部落在这里，生成前回显给用户确认，缺项不静默猜。",
+    "Q1_entity": { "value": "从页面名提取；提取不到 → 「业务单据」", "provenance": "fallback" },
+    "Q2_actions": { "value": "列表页：查询 + 新建 + 编辑 + 导出 + 批量操作", "provenance": "fallback" },
+    "Q3_statusMachine": { "value": "草稿 → 已提交 → 已生效，异常态 已驳回 / 已作废", "provenance": "fallback" },
+    "Q4_archetype": { "value": "从页面名关键词映射：管理/列表/档案→A1；新建/申请单/录入→A2；详情/360→A3；看板/分析→A4；待办/审批→A5；对账/台账/报表→A6", "provenance": "inferred" },
+    "Q5_stack": { "value": "用户给了项目路径 → 探测；否则 standalone 单文件 HTML", "provenance": "inferred" }
+  },
+
+  "example": {
+    "specVersion": "1.0",
+    "page": { "name": "许可证变更审批", "module": "证照管理", "breadcrumb": ["证照管理", "变更审批", "许可证变更审批"] },
+    "archetype": "A5",
+    "entity": { "name": "许可证变更申请", "codeRule": "LIC-年份-序号" },
+    "fields": [
+      { "name": "许可证类型", "type": "enum", "required": true, "options": ["Z39", "Z15", "Z89"], "control": "select", "provenance": "user" },
+      { "name": "许可证号", "type": "code", "required": true, "unique": true, "provenance": "user" },
+      { "name": "修改节点", "type": "enum", "options": ["申请人提交", "部门经理审核", "安全环保部复核", "生产总监批准", "归档生效"], "provenance": "inferred" }
+    ],
+    "data": { "minRows": 6 },
+    "stack": { "target": "react", "projectRoot": "" }
+  }
+}

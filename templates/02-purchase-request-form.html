@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>采购申请单 · 示例 ERP</title>
+<!-- 依赖规范版本：skill 1.2.0（pageSpec 1.0 / archetypes 1.0 / recipes 1.0 / tokens 1.0）· ERP Page Forge -->
+<!-- 原型：A2 单据表单页 · ERP Page Forge 生成 · 零依赖单文件 · 虚构演示数据 -->
+<style>
+:root{
+ --brand:#2b5cff;--brand-weak:#eef3ff;--brand-strong:#1c46d6;
+ --ok:#12a150;--ok-weak:#e7f6ee;--warn:#e08b00;--warn-weak:#fdf3e2;
+ --danger:#e5484d;--danger-weak:#fdecec;--purple:#7c5cff;--purple-weak:#f0edff;
+ --bg:#f4f6fa;--surface:#fff;--line:#e6e9f0;--line-strong:#d5d9e3;
+ --text:#1c2230;--text-2:#5a6478;--text-3:#8b93a5;
+ --side-bg:#111827;--side-hover:#1b2437;--side-on:#22304d;--side-text:#a7b0c4;
+ --sh:0 1px 2px rgba(16,24,40,.05);--sh2:0 24px 48px rgba(16,24,40,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+/* 金额/数量/日期列一律不折行，否则窄列会把 2026-09-17 折成两行 */
+td.num{white-space:nowrap}
+.app{display:flex;min-height:100vh}
+.side{width:216px;flex:0 0 216px;background:var(--side-bg);color:var(--side-text);position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:16px;color:#fff;font-weight:600;font-size:14.5px;border-bottom:1px solid #1b2437}
+.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#5b86ff,#2b5cff);display:grid;place-items:center;font-size:11px}
+.nav{flex:1;overflow:auto;padding:8px 10px 16px}
+.nav-title{padding:12px 8px 6px;font-size:11px;letter-spacing:1px;color:#5d6b85}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;margin-bottom:2px;border-radius:8px;font-size:13.5px;color:var(--side-text);text-decoration:none}
+.nav a:hover{background:var(--side-hover);color:#fff}
+.nav a.on{background:var(--side-on);color:#fff;box-shadow:inset 2px 0 0 var(--brand)}
+.ico{width:16px;height:16px;border-radius:5px;background:#2c3852;flex:0 0 16px}
+.nav a.on .ico{background:var(--brand)}
+.me{padding:12px 14px;border-top:1px solid #1b2437;display:flex;gap:10px;align-items:center;font-size:12.5px;color:#8d97ab}
+.avatar{width:28px;height:28px;border-radius:8px;background:#2c3852;display:grid;place-items:center;color:#cbd5e6;font-size:12px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{height:56px;flex:0 0 56px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:20}
+.crumb{font-size:13px;color:var(--text-3)} .crumb b{color:var(--text)}
+.content{padding:16px 20px 92px;display:flex;flex-direction:column;gap:16px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.h1{font-size:20px;font-weight:600;margin:0 0 5px}
+.sub{font-size:12.5px;color:var(--text-3)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--sh)}
+.card-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);gap:12px}
+.card-t{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.bar{width:3px;height:14px;border-radius:2px;background:var(--brand)}
+.btn{height:34px;padding:0 14px;border-radius:6px;border:1px solid var(--line-strong);background:#fff;color:var(--text);font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:.15s}
+.btn:hover{border-color:#b9c0d0;background:#fafbfe}
+.btn-p{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn-p:hover{background:var(--brand-strong)}
+.btn-sm{height:28px;padding:0 10px;font-size:13px}
+.btn-l{border:none;background:none;color:var(--brand);padding:0 5px;height:26px;font-size:13px;cursor:pointer;border-radius:4px}
+.btn-l:hover{background:var(--brand-weak)}
+.btn-l.dg{color:var(--danger)} .btn-l.dg:hover{background:var(--danger-weak)}
+.form{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 18px;padding:18px 16px}
+.f label{display:block;font-size:12.5px;color:var(--text-2);margin-bottom:6px}
+.f label b{color:var(--danger);font-weight:400;margin-right:2px}
+.f input,.f select,.f textarea{width:100%;height:34px;padding:0 10px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-size:13.5px;color:var(--text);outline:none;font-family:inherit}
+.f textarea{height:70px;padding:8px 10px;resize:vertical}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(43,92,255,.12)}
+.f .err{display:none;font-size:12px;color:var(--danger);margin-top:4px}
+.f.bad input,.f.bad select{border-color:var(--danger);background:#fffafa}
+.f.bad .err{display:block}
+.span2{grid-column:span 2} .span4{grid-column:span 4}
+.tbl-wrap{overflow:auto}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+th{background:#fafbfd;color:var(--text-2);font-weight:500;font-size:12.5px;text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:5px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:hover{background:#fafbff}
+.r{text-align:right} .c{text-align:center}
+.cell{width:100%;height:30px;padding:0 8px;border:1px solid transparent;border-radius:5px;background:transparent;font-size:13px;color:var(--text);outline:none;font-family:inherit}
+.cell:hover{border-color:var(--line)}
+.cell:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px rgba(43,92,255,.12)}
+.cell.num{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{background:#fafbfd;font-weight:600;border-top:1px solid var(--line);border-bottom:none;padding:11px 10px}
+.hint{display:flex;gap:10px;align-items:flex-start;background:var(--warn-weak);border:1px solid #f6e0b8;color:#7a4a00;border-radius:10px;padding:11px 14px;font-size:13px}
+.steps{display:flex;align-items:center;gap:10px;padding:16px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-3)}
+.dot{width:22px;height:22px;border-radius:50%;background:#eef0f5;color:var(--text-3);display:grid;place-items:center;font-size:12px}
+.step.on .dot{background:var(--brand);color:#fff} .step.on{color:var(--text);font-weight:500}
+.step.done .dot{background:var(--ok-weak);color:var(--ok)}
+.line{width:34px;height:1px;background:var(--line-strong)}
+.actionbar{position:fixed;left:216px;right:0;bottom:0;height:64px;background:#fff;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;box-shadow:0 -2px 8px rgba(16,24,40,.04);z-index:30}
+.sum{font-size:13px;color:var(--text-2)} .sum b{font-size:17px;color:var(--text);margin-left:6px}
+.toast{position:fixed;left:50%;top:22px;transform:translate(-50%,-140%);background:#1c2230;color:#fff;padding:10px 18px;border-radius:8px;font-size:13.5px;z-index:99;transition:.24s;box-shadow:var(--sh2)}
+.toast.on{transform:translate(-50%,0)}
+.foot{font-size:12px;color:var(--text-3);text-align:center}
+@media (max-width:1100px){.side{display:none}.actionbar{left:0}.form{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo">示例</span> 示例 ERP</div>
+    <nav class="nav">
+      <div class="nav-title">工作台</div>
+      <a href="#"><span class="ico"></span>我的工作台</a>
+      <div class="nav-title">业务管理</div>
+      <a href="#" class="on"><span class="ico"></span>采购管理</a>
+      <a href="#"><span class="ico"></span>销售管理</a>
+      <a href="#"><span class="ico"></span>库存管理</a>
+      <a href="#"><span class="ico"></span>生产管理</a>
+      <div class="nav-title">财务与基础</div>
+      <a href="#"><span class="ico"></span>应收应付</a>
+      <a href="#"><span class="ico"></span>基础数据</a>
+      <a href="#"><span class="ico"></span>系统设置</a>
+    </nav>
+    <div class="me"><span class="avatar">李</span><div>李静<div>采购部 · 采购专员</div></div></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div class="crumb">采购管理 / 采购申请 / <b>新建采购申请单</b></div>
+      <div class="me" style="border:0;padding:0;color:var(--text-3)"><span class="avatar" style="background:#eef3ff;color:var(--brand)">李</span>李静</div>
+    </header>
+
+    <main class="content">
+      <div class="head">
+        <div>
+          <h1 class="h1">新建采购申请单</h1>
+          <div class="sub">申请单号 <b class="num">PR-2026-09-0173</b>（保存后自动生成） · 制单人 李静 · 2026-09-17</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="tag-draft" style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:12px;color:var(--text-2);background:#f1f3f7;border:1px solid #e4e7ee">草稿</span>
+          <button class="btn" onclick="fillDemo()">载入示例数据</button>
+        </div>
+      </div>
+
+      <div class="hint" id="urgentHint" style="display:none">
+        <span>!</span><div><b>紧急采购</b>：需求到货日期距今天不足 5 天，提交后将跳过部门审批直达采购经理，请在「用途说明」中填写紧急原因。</div>
+      </div>
+
+      <section class="card">
+        <div class="card-h"><div class="card-t"><span class="bar"></span>申请信息</div><span class="muted" style="font-size:12px;color:var(--text-3)">带 * 为必填项</span></div>
+        <div class="form">
+          <div class="f" id="w-dept"><label><b>*</b>申请部门</label>
+            <select id="dept"><option value="">请选择申请部门</option><option>采购部</option><option selected>生产制造部</option><option>研发中心</option><option>质量管理部</option><option>销售部</option><option>行政人事部</option></select>
+            <div class="err">请选择申请部门</div></div>
+          <div class="f"><label>申请人</label><input value="李静（EMP-2026-0312）" readonly style="background:#fafbfd;color:var(--text-2)"></div>
+          <div class="f"><label><b>*</b>申请日期</label><input type="date" id="applyDate" value="2026-09-17"><div class="err">请选择申请日期</div></div>
+          <div class="f" id="w-due"><label><b>*</b>需求到货日期</label><input type="date" id="due" value="2026-09-30"><div class="err">需求到货日期不能早于今天</div></div>
+          <div class="f"><label>采购类型</label>
+            <select id="ptype" onchange="onType()"><option>常规采购</option><option>紧急采购</option><option>项目采购</option></select></div>
+          <div class="f"><label>建议供应商</label>
+            <select id="supplier"><option>苏州联动电子（示例）</option><option>无锡双鹿机械（示例）</option><option>常州新亚精工（示例）</option><option value="">暂不确定</option></select></div>
+          <div class="f"><label>币种 / 结算方式</label>
+            <select id="pay"><option>CNY · 月结30天</option><option>CNY · 货到付款</option><option>CNY · 预付30%</option></select></div>
+          <div class="f"><label>是否含税</label>
+            <select id="tax"><option>含税（13% 增值税）</option><option>不含税</option></select></div>
+          <div class="f span4"><label>用途说明</label>
+            <textarea id="memo" placeholder="例如：三季度产线扩产所需备件，用于 3 号车间伺服系统改造">三季度产线扩产所需备件，用于 3 号车间伺服系统改造</textarea></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h">
+          <div class="card-t"><span class="bar"></span>采购明细（<span id="lineCount">3</span> 行）</div>
+          <button class="btn btn-sm" onclick="addRow()">+ 添加明细行</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:52px" class="c">行号</th>
+                <th style="width:170px">物料编码</th>
+                <th>物料名称 / 规格</th>
+                <th style="width:96px">需求数量</th>
+                <th style="width:70px" class="c">单位</th>
+                <th style="width:120px" class="r">预估单价</th>
+                <th style="width:130px" class="r">预估金额</th>
+                <th style="width:140px">需求日期</th>
+                <th class="c" style="width:56px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tb"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="6" class="r">合计金额（含税）</td>
+                <td class="r num" id="total">¥0.00</td>
+                <td colspan="2" style="font-weight:400;color:var(--text-3);font-size:12px">金额 = 数量 × 单价，自动计算</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h"><div class="card-t"><span class="bar"></span>审批流程预览</div><span style="font-size:12px;color:var(--text-3)">提交后按此路径流转，可在流程引擎中配置</span></div>
+        <div class="steps">
+          <div class="step on"><span class="dot">1</span>申请人提交</div><span class="line"></span>
+          <div class="step"><span class="dot">2</span>部门经理审批</div><span class="line"></span>
+          <div class="step"><span class="dot">3</span>采购经理核价</div><span class="line"></span>
+          <div class="step"><span class="dot">4</span>财务预算校验</div><span class="line"></span>
+          <div class="step"><span class="dot">5</span>转采购订单</div>
+        </div>
+      </section>
+
+      <div class="foot">本页数据为演示用虚构数据，非真实业务数据 · 由 ERP Page Forge 生成（原型 A2 单据表单页）</div>
+    </main>
+  </div>
+</div>
+
+<div class="actionbar">
+  <div class="sum">本单合计金额<b class="num" id="totalBar">¥0.00</b><span style="margin-left:14px;color:var(--text-3)">共 <span id="lineCount2">3</span> 行明细</span></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn" onclick="toast('已取消编辑，未保存')">取消</button>
+    <button class="btn" onclick="saveDraft()">暂存草稿</button>
+    <button class="btn btn-p" onclick="submitForm()">提交审批</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* 数据层：真实环境替换为接口返回的可用物料与供应商档案 */
+const CATALOG=[
+ {code:'MAT-2026-0012',name:'交流伺服电机 ASD-B2 750W',unit:'台',price:4296.00},
+ {code:'MAT-2026-0031',name:'精密减速机 RV-40E',unit:'台',price:6850.80},
+ {code:'MAT-2026-0047',name:'铝合金型材 6063-T5',unit:'kg',price:26.50},
+ {code:'MAT-2026-0058',name:'工业控制板 PCBA-02',unit:'件',price:892.00},
+ {code:'MAT-2026-0066',name:'气动执行器 AT-88',unit:'台',price:1160.00},
+ {code:'MAT-2026-0074',name:'直线导轨 HGR25',unit:'套',price:1180.00}
+];
+let lines=[];
+let seq=0;
+
+const money=n=>'¥'+Number(n||0).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function addRow(preset){
+  const c=preset||CATALOG[lines.length%CATALOG.length];
+  lines.push({id:++seq,code:c.code,name:c.name,unit:c.unit,qty:preset?20:10,price:c.price,due:document.getElementById('due').value||'2026-09-30'});
+  renderLines();
+}
+function delRow(id){
+  if(lines.length<=1){ toast('至少保留一行明细'); return; }
+  lines=lines.filter(l=>l.id!==id); renderLines(); toast('已删除明细行并重算合计');
+}
+function renderLines(){
+  document.getElementById('tb').innerHTML=lines.map((l,i)=>`
+    <tr>
+      <td class="c">${i+1}</td>
+      <td><input class="cell" id="code-${l.id}" value="${l.code}" oninput="set(${l.id},'code',this.value)"></td>
+      <td><input class="cell" id="name-${l.id}" value="${l.name}" oninput="set(${l.id},'name',this.value)" onchange="pickByName(${l.id},this.value)"></td>
+      <td><input class="cell num" id="qty-${l.id}" type="number" min="1" value="${l.qty}" oninput="set(${l.id},'qty',this.value)"></td>
+      <td class="c" id="unit-${l.id}">${l.unit}</td>
+      <td><input class="cell num" id="price-${l.id}" type="number" step="0.01" min="0" value="${l.price.toFixed(2)}" oninput="set(${l.id},'price',this.value)"></td>
+      <td class="r num" style="font-weight:600" id="amt-${l.id}">${money(l.qty*l.price)}</td>
+      <td><input class="cell num" type="date" value="${l.due}" oninput="set(${l.id},'due',this.value)"></td>
+      <td class="c"><button class="btn-l dg" onclick="delRow(${l.id})">删除</button></td>
+    </tr>`).join('');
+  refreshTotals();
+}
+/* 只更新模型与受影响的单元格，避免整表重绘导致输入框失焦 */
+function set(id,k,v){ const l=lines.find(x=>x.id===id); if(!l) return; l[k]=v; refreshTotals(); }
+function refreshTotals(){
+  lines.forEach(l=>{ const el=document.getElementById('amt-'+l.id); if(el) el.textContent=money((+l.qty||0)*(+l.price||0)); });
+  const total=lines.reduce((s,l)=>s+(+l.qty||0)*(+l.price||0),0);
+  document.getElementById('total').textContent=money(total);
+  document.getElementById('totalBar').textContent=money(total);
+  document.getElementById('lineCount').textContent=lines.length;
+  document.getElementById('lineCount2').textContent=lines.length;
+}
+function pickByName(id,v){
+  const c=CATALOG.find(x=>x.name===v); if(!c) return;
+  const l=lines.find(x=>x.id===id); l.code=c.code; l.unit=c.unit; l.price=c.price;
+  document.getElementById('code-'+id).value=c.code;
+  document.getElementById('unit-'+id).textContent=c.unit;
+  document.getElementById('price-'+id).value=c.price.toFixed(2);
+  refreshTotals(); toast('已按物料档案带出编码 / 单位 / 单价');
+}
+function onType(){
+  const urgent=document.getElementById('ptype').value==='紧急采购';
+  document.getElementById('urgentHint').style.display=urgent?'flex':'none';
+  if(urgent) toast('已切换为紧急采购，审批路径将跳过部门经理');
+}
+function fillDemo(){ lines=[]; seq=0; addRow(CATALOG[0]); lines[0].qty=20; addRow(CATALOG[2]); lines[1].qty=1200; lines[1].price=26.5; addRow(CATALOG[5]); lines[2].qty=8;
+  renderLines(); toast('已载入示例明细，合计自动重算'); }
+
+function markErr(id,bad){ document.getElementById(id).classList.toggle('bad',bad); return !bad; }
+function validate(){
+  let ok=true;
+  ok = markErr('w-dept', !document.getElementById('dept').value) && ok;
+  const today=new Date().toISOString().slice(0,10);
+  ok = markErr('w-due', !document.getElementById('due').value || document.getElementById('due').value<today) && ok;
+  const badRows=lines.filter(l=>!l.code||!l.name||!(+l.qty>0)||!(+l.price>0)).length;
+  if(badRows){ toast(`有 ${badRows} 行明细的物料或数量/单价未填写完整`); ok=false; }
+  if(!ok) toast('提交失败：请先修正标红的必填项');
+  return ok;
+}
+function saveDraft(){ toast(`草稿已保存：PR-2026-09-0173 · ${lines.length} 行明细 · 合计 ${money(calcTotal())}`); }
+function submitForm(){
+  if(!validate()) return;
+  if(!confirm(`确认提交采购申请单？\n合计金额 ${money(calcTotal())}，提交后进入部门经理审批。`)) return;
+  toast('已提交审批，当前节点：部门经理审批（人工复核后方可转采购订单）');
+}
+function calcTotal(){ return lines.reduce((s,l)=>s+(+l.qty||0)*(+l.price||0),0); }
+let tid; function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(tid); tid=setTimeout(()=>t.classList.remove('on'),2400); }
+fillDemo();
+</script>
+</body>
+</html>

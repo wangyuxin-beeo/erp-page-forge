@@ -1,0 +1,207 @@
+<!-- ================= A5 · 审批工作台（骨架） =================
+     三栏：左栏任务列表（待办/已办/我发起）+ 中栏单据详情 + 右栏审批轨迹，底部审批动作。
+     「同意」即本节点办结并把任务移出待办（收件箱语义）；「驳回/转办」必须填意见或接收人。
+-->
+<div class="page-head">
+  <div>
+    <h1>{{PAGE_NAME}}</h1>
+    <div class="sub" id="pageSub">{{PAGE_SUB}}</div>
+  </div>
+  <div class="head-actions">{{HEAD_ACTIONS}}</div>
+</div>
+
+<div class="notice-bar" id="noticeBar">{{NOTICE}}</div>
+
+<div class="cols">
+  <div class="col">
+    <div class="col-h">我的任务</div>
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-tab="todo">待办<b id="cntTodo">0</b></button>
+      <button class="tab" data-tab="done">已办<b id="cntDone">0</b></button>
+      <button class="tab" data-tab="mine">我发起<b id="cntMine">0</b></button>
+    </div>
+    <div id="taskList"></div>
+  </div>
+
+  <div class="col">
+    <div class="col-h detail-title" id="detailTitle">单据详情</div>
+    <div class="detail-pad" id="detailBody"></div>
+    <div class="col-f" id="panelFoot"></div>
+  </div>
+
+  <div class="col">
+    <div class="col-h">审批轨迹</div>
+    <div class="detail-pad" id="tlBox"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var M = window.__MODEL__;
+  var tab = 'todo', cur = null;
+
+  function bucket(r) {
+    if (r.isMine) { return 'mine'; }
+    return r.status === '待审批' ? 'todo' : 'done';
+  }
+  function rowsOf(t) {
+    return M.rows.filter(function (r) { return bucket(r) === t; });
+  }
+  function byId(id) {
+    var hit = null;
+    M.rows.forEach(function (r) { if (r.__id === id) { hit = r; } });
+    return hit;
+  }
+
+  function renderCounts() {
+    F.$('#cntTodo').textContent = rowsOf('todo').length;
+    F.$('#cntDone').textContent = rowsOf('done').length;
+    F.$('#cntMine').textContent = rowsOf('mine').length;
+    F.$$('.tab', F.$('#tabs')).forEach(function (b) {
+      b.className = 'tab' + (b.getAttribute('data-tab') === tab ? ' on' : '');
+    });
+  }
+
+  function renderList() {
+    var rows = rowsOf(tab), host = F.$('#taskList');
+    if (!rows.length) {
+      host.innerHTML = '<div class="empty"><div class="box">✓</div>暂无记录</div>';
+      if (cur) { cur = null; renderDetail(); }
+      return;
+    }
+    if (!cur || bucket(byId(cur)) !== tab) { cur = rows[0].__id; }
+    host.innerHTML = rows.map(function (r) {
+      var urgent = r.remainHours <= 12 && r.status === '待审批';
+      return '<div class="task' + (r.__id === cur ? ' on' : '') + (urgent ? ' danger' : '') + '" data-task="' + r.__id + '">' +
+        '<div class="r1"><span class="tt">' + r.title + '</span><span class="amt num">' + F.money(r.amount) + '</span></div>' +
+        '<div class="r2"><span>' + r.code + '</span>' + F.tag(r.status, r.statusTone) +
+        '<span class="' + (urgent ? 'overdue' : '') + '">' + r.remainText + '</span></div>' +
+        '</div>';
+    }).join('');
+    F.$$('[data-task]', host).forEach(function (el) {
+      el.onclick = function () { cur = el.getAttribute('data-task'); renderList(); renderDetail(); };
+    });
+  }
+
+  function renderDetail() {
+    var t = byId(cur);
+    var titleEl = F.$('#detailTitle');
+    if (!t) {
+      titleEl.textContent = '单据详情';
+      F.$('#detailBody').innerHTML = '<div class="empty"><div class="box">∅</div>请从左侧选择一条任务</div>';
+      F.$('#panelFoot').innerHTML = '';
+      F.$('#tlBox').innerHTML = '';
+      return;
+    }
+    titleEl.textContent = t.code;
+
+    var kv = M.detailFields.map(function (f) {
+      var v = t[f.key];
+      if (f.type === 'money') { v = F.money(v); }
+      else if (f.type === 'number') { v = F.num(v, f.precision || 0) + (f.unit ? ' ' + f.unit : ''); }
+      else if (v === undefined || v === null || v === '') { v = '—'; }
+      return '<div><div class="kv-label">' + f.name + '</div><div class="kv-value">' + v + '</div></div>';
+    }).join('');
+
+    F.$('#detailBody').innerHTML =
+      '<div class="kv-grid">' + kv + '</div>' +
+      '<div class="card" style="margin-top:14px"><div class="card-h">明细</div>' +
+      '<div class="tbl-wrap"><table><thead><tr>' +
+      M.lineColumns.map(function (c) { return '<th class="' + (c.align === 'right' ? 'r' : c.align === 'center' ? 'c' : '') + '">' + c.name + '</th>'; }).join('') +
+      '</tr></thead><tbody>' +
+      t.lines.map(function (ln) { return '<tr>' + F.cells(ln, M.lineColumns) + '</tr>'; }).join('') +
+      '</tbody><tfoot><tr><td colspan="' + (M.lineColumns.length - 1) + '" class="r">合计金额</td>' +
+      '<td class="r num">' + F.money(t.lines.reduce(function (s, l) { return s + (Number(l[M.sumKey]) || 0); }, 0)) + '</td>' +
+      '</tr></tfoot></table></div></div>';
+
+    /* 审批动作：本人提交的单据不可自审 */
+    var canAct = (tab === 'todo' && !t.isMine && t.status === '待审批');
+    F.$('#panelFoot').innerHTML = canAct
+      ? M.actionDefs.map(function (a) {
+          return '<button class="btn' + (a.primary ? ' btn-p' : (a.danger ? ' btn-dg' : '')) + '" data-act="' + a.act + '">' + a.label + '</button>';
+        }).join('')
+      : '<span class="muted">' + (t.isMine ? '本人提交的申请不可自审，仅可查看进度' : '该单据当前不在你的处理节点，仅可查看') + '</span>';
+    F.$$('[data-act]', F.$('#panelFoot')).forEach(function (b) {
+      b.onclick = function () { act(b.getAttribute('data-act'), t); };
+    });
+
+    /* 时间线：已完成节点数 = 当前节点索引 */
+    F.$('#tlBox').innerHTML = '<ul class="tl">' + M.nodeFlow.map(function (n, i) {
+      var cls = i < t.nodeIndex ? 'done' : (i === t.nodeIndex ? 'now' : '');
+      var who = i < t.nodeIndex ? (t.timelineMeta[i] || '') : (i === t.nodeIndex ? '当前节点' : '等待前序节点');
+      var memo = (t.memos && t.memos[i]) ? '<div class="memo">' + t.memos[i] + '</div>' : '';
+      return '<li class="' + cls + '"><div class="t1">' + n + '</div><div class="t2">' + who + '</div>' + memo + '</li>';
+    }).join('') + '</ul>';
+
+    F.$('#pageSub').innerHTML = '当前节点：<b>' + (t.nodeIndex + 1) + ' / ' + M.nodeFlow.length + '</b> · ' +
+      '剩余时限 ' + t.remainText + ' · 提交人 ' + t.submitter + '（' + t.submitterDept + '）';
+  }
+
+  function advance(t) {
+    t.status = '流转中';
+    t.statusTone = M.toneOf['流转中'] || 'brand';
+    t.nodeIndex = Math.min(t.nodeIndex + 1, M.nodeFlow.length - 1);
+    t.memos = t.memos || {};
+    t.memos[t.nodeIndex - 1] = '同意（演示意见：符合流程要求）';
+    t.timelineMeta[t.nodeIndex - 1] = '已同意 · 审批人 王磊';
+    t.remainText = '已办结';
+    if (t.nodeIndex >= M.nodeFlow.length - 1) { t.status = '已通过'; t.statusTone = M.toneOf['已通过'] || 'ok'; }
+  }
+
+  function act(kind, t) {
+    if (kind === 'agree') {
+      F.modal({
+        title: '同意确认',
+        note: '单据 ' + t.code + '（' + F.money(t.amount) + '）将流转至下一审批节点。',
+        fields: [{ key: 'memo', label: '审批意见（选填）', type: 'textarea' }],
+        confirmText: '同意并提交下一节点'
+      }).then(function (v) {
+        if (!v) { return; }
+        advance(t);
+        renderCounts(); renderList(); renderDetail();
+        F.toast('已同意，该任务移出待办，流转至下一节点');
+      });
+      return;
+    }
+    if (kind === 'reject') {
+      F.modal({
+        title: '驳回 · 请填写驳回原因',
+        note: '驳回必须填写原因，将同步通知申请人；本单据会退回提交人修改。',
+        fields: [{ key: 'reason', label: '驳回原因', type: 'textarea', required: true, placeholder: '请说明驳回的具体原因' }],
+        confirmText: '确认驳回', danger: true
+      }).then(function (v) {
+        if (!v) { return; }
+        t.status = '已驳回'; t.statusTone = M.toneOf['已驳回'] || 'danger';
+        t.memos = t.memos || {}; t.memos[t.nodeIndex] = '驳回原因：' + v.reason;
+        t.remainText = '已驳回';
+        renderCounts(); renderList(); renderDetail();
+        F.toast('已驳回，申请将退回提交人修改');
+      });
+      return;
+    }
+    if (kind === 'transfer') {
+      F.modal({
+        title: '转办 · 请选择接收人',
+        note: '转办后该任务移出我的待办，由接收人处理。',
+        fields: [{ key: 'to', label: '接收人', type: 'select', options: M.candidates, required: true }],
+        confirmText: '确认转办'
+      }).then(function (v) {
+        if (!v) { return; }
+        t.status = '已转办'; t.statusTone = M.toneOf['已转办'] || 'purple';
+        t.memos = t.memos || {}; t.memos[t.nodeIndex] = '转办给 ' + v.to;
+        t.remainText = '已转办';
+        renderCounts(); renderList(); renderDetail();
+        F.toast('已转办给 ' + v.to + '，该任务移出我的待办');
+      });
+    }
+  }
+
+  F.$$('.tab', F.$('#tabs')).forEach(function (b) {
+    b.onclick = function () { tab = b.getAttribute('data-tab'); renderCounts(); renderList(); renderDetail(); };
+  });
+
+  renderCounts();
+  renderList();
+  renderDetail();
+})();
+</script>

@@ -1,0 +1,36 @@
+{
+  "profile": "full-public-source",
+  "files_scanned_before_reports": 144,
+  "blocking_findings": [],
+  "checks": {
+    "python_syntax_modules": 66,
+    "typescript_compile": true,
+    "client_copy": true,
+    "engine_copy": true,
+    "npm_prepack_whitelist": true,
+    "reject_unexpected_runtime_file": true,
+    "deterministic_generation_repeat": true,
+    "archetypes_generated": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "A6"
+    ],
+    "taxonomy": true,
+    "studio_http_200": [
+      "/",
+      "/api/ai/status",
+      "/api/workspaces",
+      "/api/templates"
+    ]
+  },
+  "limitations": [
+    "unittest ran 35 tests, reported 34 error records; Windows sandbox denied nested writes and cleanup in tempfile-created directories; this is not a passing suite",
+    "No clean registry install or real DSH host activation tested",
+    "No real model request, real internal site capture, browser render acceptance or binary wheel installation tested",
+    "Historical screenshot-dependent regression fixtures intentionally excluded",
+    "License unchanged: UNLICENSED"
+  ]
+}

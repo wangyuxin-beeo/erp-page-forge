@@ -1,0 +1,108 @@
+<!-- ================= A3 · 主数据详情页（骨架） =================
+     区块顺序固定：页面头 → 头部摘要条 → Tabs（基本信息 / 业务子表 / 关联单据 / 变更记录）
+     铁律：Tab 切换不刷新页面；启用态只显示「停用」、停用态只显示「启用」；停用/启用必须二次确认；
+          变更记录必须是「旧值 → 新值」diff，不是一句"已修改"。
+     占位符由 build/forge.py 填充；交互逻辑数据驱动，不随实体变化。
+-->
+<div class="page-head">
+  <div>
+    <h1 id="recTitle">{{PAGE_NAME}}</h1>
+    <div class="sub" id="pageSub">{{PAGE_SUB}}</div>
+  </div>
+  <div class="head-actions" id="headActs">{{HEAD_ACTIONS}}</div>
+</div>
+
+<div class="card summary" id="summary"></div>
+
+<div class="card">
+  <div class="dtabs" id="dtabs" role="tablist">{{TAB_BAR}}</div>
+  <div id="panes">{{TAB_PANES}}</div>
+</div>
+
+<script>
+(function () {
+  var M = window.__MODEL__;
+  var R = M.record;
+
+  function fmt(f, v) {
+    if (f.type === 'money') { return F.money(v); }
+    if (f.type === 'number') { return F.num(v, f.precision || 0) + (f.unit ? ' ' + f.unit : ''); }
+    if (f.type === 'bool') { return v ? '是' : '否'; }
+    if (f.type === 'status') { return F.tag(v, M.toneOf[v] || 'neutral'); }
+    return (v === undefined || v === null || v === '') ? '—' : v;
+  }
+
+  function renderSummary() {
+    F.$('#summary').innerHTML = M.summary.map(function (s) {
+      var v = s.key === M.statusKey ? F.tag(R.status, M.toneOf[R.status] || 'neutral') : fmt(s, R[s.key]);
+      return '<div class="it"><div class="t">' + s.name + '</div><div class="v' + (s.alert ? ' dg' : '') + '">' + v + '</div></div>';
+    }).join('');
+    F.$('#pageSub').innerHTML = '编码 <b>' + R[M.codeKey] + '</b> · 当前状态 ' +
+      F.tag(R.status, M.toneOf[R.status] || 'neutral') + ' · 最近更新 ' + M.changeLog[0].time + ' · ' + M.changeLog[0].who;
+  }
+
+  /* 状态驱动按钮：不在 allowedStates 里的动作直接不渲染 */
+  function renderActs() {
+    var host = F.$('#headActs');
+    host.innerHTML = M.actionDefs.filter(function (d) {
+      return !d.states || d.states.indexOf(R.status) >= 0;
+    }).map(function (d) {
+      return '<button class="btn' + (d.primary ? ' btn-p' : '') + (d.danger ? ' btn-dg' : '') +
+        '" data-hact="' + d.act + '">' + d.label + '</button>';
+    }).join('');
+    F.$$('[data-hact]', host).forEach(function (b) { b.onclick = function () { doAct(b.getAttribute('data-hact')); }; });
+  }
+
+  function doAct(act) {
+    var def = null;
+    M.actionDefs.forEach(function (d) { if (d.act === act) { def = d; } });
+    if (!def || !def.to) { F.toast(act + '（演示）'); return; }
+    F.modal({
+      title: act + '确认',
+      note: '将把「' + R[M.nameKey] + '」状态由「' + R.status + '」改为「' + def.to + '」，该操作会记入变更记录。',
+      fields: [{ key: 'reason', label: act + '原因', type: 'textarea', required: true, placeholder: '请填写' + act + '原因' }],
+      confirmText: '确认' + act, danger: !!def.danger
+    }).then(function (v) {
+      if (!v) { return; }
+      var old = R.status;
+      R.status = def.to;
+      M.changeLog.unshift({ time: M.now, who: M.user, field: '状态', old: old, 'new': def.to, memo: v.reason });
+      renderSummary(); renderActs(); renderLog();
+      F.toast('已' + act + '，状态变为「' + def.to + '」');
+    });
+  }
+
+  function renderLog() {
+    var el = F.$('#changeLog');
+    if (!el) { return; }
+    el.innerHTML = M.changeLog.map(function (c, i) {
+      return '<li class="' + (i === 0 ? 'now' : 'done') + '"><div class="t1">' + c.who + ' 修改了「' + c.field + '」</div>' +
+        '<div class="t2">' + c.time + '</div>' +
+        '<div class="memo diff"><span class="old">' + c.old + '</span> → <span class="new">' + c['new'] + '</span>' +
+        (c.memo ? '<div class="muted" style="margin-top:4px">原因：' + c.memo + '</div>' : '') + '</div></li>';
+    }).join('');
+    var n = F.$('[data-tab="log"] .n');
+    if (n) { n.textContent = M.changeLog.length; }
+  }
+
+  function renderTables() {
+    M.subTables.forEach(function (t) {
+      var host = F.$('#tb-' + t.id);
+      if (!host) { return; }
+      host.innerHTML = t.rows.length ? t.rows.map(function (r) {
+        return '<tr>' + F.cells(r, t.columns) + '</tr>';
+      }).join('') : '<tr><td colspan="' + t.columns.length + '"><div class="empty">暂无数据</div></td></tr>';
+    });
+  }
+
+  /* Tab：纯前端切换，不刷新、不改 URL 以外的任何状态 */
+  F.$$('.dtab').forEach(function (b) {
+    b.onclick = function () {
+      F.$$('.dtab').forEach(function (x) { x.classList.toggle('on', x === b); x.setAttribute('aria-selected', x === b); });
+      F.$$('.pane').forEach(function (p) { p.classList.toggle('on', p.getAttribute('data-pane') === b.getAttribute('data-tab')); });
+    };
+  });
+
+  renderSummary(); renderActs(); renderTables(); renderLog();
+})();
+</script>

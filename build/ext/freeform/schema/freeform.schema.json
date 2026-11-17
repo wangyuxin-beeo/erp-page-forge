@@ -1,0 +1,157 @@
+{
+  "specVersion": "ff-1.0",
+  "title": "FreeformSpec",
+  "meta": {
+    "purpose": "自由版式页面的唯一生成输入。A1–A6 覆盖不了的页面（落地页、空状态、引导页、门户、自定义卡片布局）用这份契约表达。",
+    "boundary": "自由版式的业务语义不来自原型骨架，而来自 semantics 声明（方案 C：能自动识别的自动填，识别不了的提示用户补）。声明了交互/数据/契约就照 A1–A6 同一标准验（真实点击、真实计数）；未声明的类别在报告里标「未声明，本次不验」，不冒充通过，也不再标「不适用」。文字区块禁止 crop 成位图，否则文案断言形同虚设。",
+    "determinism": "同一份 FreeformSpec（含同一张源图）生成的 page.html 逐字节一致。",
+    "consumers": [
+      "build/ext/freeform/ff_spec.py —— 校验",
+      "build/ext/freeform/ff_forge.py —— 确定性生成",
+      "build/ext/freeform/ff_verify.py —— 验收",
+      "build/ext/freeform/ff_parse.py —— 指令替换 slot"
+    ]
+  },
+  "type": "object",
+  "required": ["kind", "specVersion", "name", "canvas", "regions"],
+  "properties": {
+    "kind": { "const": "freeform" },
+    "specVersion": { "const": "ff-1.0" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 40, "description": "模板/页面名" },
+    "source": {
+      "type": "object",
+      "properties": {
+        "type": { "enum": ["image", "html", "hand"] },
+        "file": { "type": "string", "description": "源素材相对路径（源图 / 净化后的 skeleton.html）" }
+      }
+    },
+    "canvas": {
+      "type": "object", "required": ["w", "h"],
+      "properties": {
+        "w": { "type": "integer", "minimum": 200, "maximum": 8000 },
+        "h": { "type": "integer", "minimum": 200, "maximum": 8000 },
+        "bg": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "画布底色；缺省用令牌 pageBg" }
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "description": "与 PageSpec.tokens 同构：inherit-visual 时整表注入生成层",
+      "properties": {
+        "mode": { "enum": ["skill-default", "inherit-visual"] },
+        "values": { "type": "object" }
+      }
+    },
+    "regions": {
+      "type": "array", "minItems": 1, "maxItems": 120,
+      "items": {
+        "type": "object", "required": ["id", "role", "bbox", "keep"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,24}$" },
+          "role": {
+            "enum": ["nav", "header", "card", "text", "button", "input", "image", "illustration", "divider", "container"],
+            "description": "命名对齐 skill/spec/ui-taxonomy.json（只读引用，不改该文件）"
+          },
+          "bbox": {
+            "type": "array", "items": { "type": "integer" }, "minItems": 4, "maxItems": 4,
+            "description": "[x0,y0,x1,y1]，源图坐标，x0<x1、y0<y1"
+          },
+          "keep": {
+            "enum": ["rebuild", "crop"],
+            "description": "rebuild=HTML/CSS 重建（文字必须是真文字）；crop=从源图裁切位图嵌入（仅限插画/logo/复杂装饰）"
+          },
+          "slot": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,24}$", "description": "可被指令替换的文案槽；全 spec 内唯一" },
+          "text": { "type": "string", "description": "文案内容（slot 存在时以 slots[slot] 为准）" },
+          "style": {
+            "type": "object",
+            "properties": {
+              "bg": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+              "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+              "fontSize": { "type": "integer", "minimum": 8, "maximum": 200 },
+              "bold": { "type": "boolean" },
+              "align": { "enum": ["left", "center", "right"] },
+              "radius": { "type": "integer", "minimum": 0, "maximum": 999 }
+            }
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "slots": {
+      "type": "object",
+      "description": "slot 名 → 当前文案。生成时以本表为准回填；指令复用时只改这里",
+      "propertyNames": { "pattern": "^[A-Za-z0-9_-]{1,24}$" }
+    },
+    "semantics": {
+      "type": "object",
+      "description": "业务语义声明（方案 C）。声明了的类别按 A1–A6 同一标准断言；未声明的类别报告标「未声明，本次不验」。",
+      "properties": {
+        "page": {
+          "type": "object",
+          "properties": {
+            "purpose": { "type": "string", "maxLength": 120, "description": "页面用途一句话，写进报告与生成日志" },
+            "entities": { "type": "array", "items": { "type": "string" }, "description": "涉及的业务对象名" }
+          }
+        },
+        "contract": {
+          "type": "array",
+          "description": "契约断言：声明了就必须在产物文本中出现/不出现（复用 verify_contract 的 static 检查器）",
+          "items": {
+            "type": "object", "required": ["id", "kind", "value"],
+            "properties": {
+              "id": { "type": "string" },
+              "kind": { "enum": ["text", "absent", "regex", "regex_count"] },
+              "value": { "type": "string" },
+              "pattern": { "type": "string" },
+              "from": { "enum": ["auto", "user"], "description": "auto=自动识别待确认，user=用户声明" }
+            }
+          }
+        },
+        "interactions": {
+          "type": "array",
+          "description": "交互断言：trigger 区块被真实点击后应发生的事。scroll/toggle 由 ff_forge 直接实现到产物里；confirms 只验不造。",
+          "items": {
+            "type": "object", "required": ["id", "trigger", "type"],
+            "properties": {
+              "id": { "type": "string" },
+              "trigger": { "type": "string", "description": "触发区块的 region id" },
+              "type": { "enum": ["scroll", "toggle", "confirms"] },
+              "target": { "type": "string", "description": "scroll/toggle 的目标 region id" },
+              "desc": { "type": "string" },
+              "from": { "enum": ["auto", "user"] }
+            }
+          }
+        },
+        "data": {
+          "type": "array",
+          "description": "数据自洽断言：两个选择器数出的数量应相等（如角标数=条目数）",
+          "items": {
+            "type": "object", "required": ["id", "type", "a", "b"],
+            "properties": {
+              "id": { "type": "string" },
+              "type": { "enum": ["count-equals"] },
+              "a": { "type": "string", "description": "CSS 选择器 A" },
+              "b": { "type": "string", "description": "CSS 选择器 B" },
+              "desc": { "type": "string" },
+              "from": { "enum": ["auto", "user"] }
+            }
+          }
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "properties": {
+        "requiredTexts": {
+          "type": "array", "items": { "type": "string" },
+          "description": "必须出现在产物 DOM 文本里的字符串（缺省 = 全部 slot 值 + 非 slot 的静态文字）"
+        },
+        "minTextLen": { "type": "integer", "minimum": 0, "description": "渲染后正文下限，缺省 120" }
+      }
+    },
+    "provenance": {
+      "type": "array",
+      "description": "可解释性：每条 {what, from} 说明区块/文案的来源（pixel=像素量得 / label=人工标注 / hand=手写）",
+      "items": { "type": "object", "properties": { "what": { "type": "string" }, "from": { "type": "string" } } }
+    }
+  }
+}

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>审批待办中心 · 示例 ERP</title>
+<!-- 依赖规范版本：skill 1.2.0（pageSpec 1.0 / archetypes 1.0 / recipes 1.0 / tokens 1.0）· ERP Page Forge -->
+<!-- 原型：A5 审批工作台（左列表 + 右单据详情 + 审批轨迹）· ERP Page Forge 生成 · 零依赖 · 虚构演示数据 -->
+<style>
+:root{
+ --brand:#2b5cff;--brand-weak:#eef3ff;--brand-strong:#1c46d6;
+ --ok:#12a150;--ok-weak:#e7f6ee;--warn:#e08b00;--warn-weak:#fdf3e2;
+ --danger:#e5484d;--danger-weak:#fdecec;--purple:#7c5cff;--purple-weak:#f0edff;
+ --bg:#f4f6fa;--surface:#fff;--line:#e6e9f0;--line-strong:#d5d9e3;
+ --text:#1c2230;--text-2:#5a6478;--text-3:#8b93a5;
+ --side-bg:#111827;--side-hover:#1b2437;--side-on:#22304d;--side-text:#a7b0c4;
+ --sh:0 1px 2px rgba(16,24,40,.05);--sh2:0 24px 48px rgba(16,24,40,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+.app{display:flex;min-height:100vh}
+.side{width:216px;flex:0 0 216px;background:var(--side-bg);color:var(--side-text);position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:16px;color:#fff;font-weight:600;font-size:14.5px;border-bottom:1px solid #1b2437}
+.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#5b86ff,#2b5cff);display:grid;place-items:center;font-size:11px}
+.nav{flex:1;overflow:auto;padding:8px 10px 16px}
+.nav-title{padding:12px 8px 6px;font-size:11px;letter-spacing:1px;color:#5d6b85}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;margin-bottom:2px;border-radius:8px;font-size:13.5px;color:var(--side-text);text-decoration:none}
+.nav a:hover{background:var(--side-hover);color:#fff}
+.nav a.on{background:var(--side-on);color:#fff;box-shadow:inset 2px 0 0 var(--brand)}
+.ico{width:16px;height:16px;border-radius:5px;background:#2c3852;flex:0 0 16px}
+.nav a.on .ico{background:var(--brand)}
+.me{padding:12px 14px;border-top:1px solid #1b2437;display:flex;gap:10px;align-items:center;font-size:12.5px;color:#8d97ab}
+.avatar{width:28px;height:28px;border-radius:8px;background:#2c3852;display:grid;place-items:center;color:#cbd5e6;font-size:12px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{height:56px;flex:0 0 56px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:20}
+.crumb{font-size:13px;color:var(--text-3)} .crumb b{color:var(--text)}
+.content{padding:16px 20px 28px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.h1{font-size:20px;font-weight:600;margin:0 0 5px}
+.sub{font-size:12.5px;color:var(--text-3)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--sh)}
+.btn{height:34px;padding:0 14px;border-radius:6px;border:1px solid var(--line-strong);background:#fff;color:var(--text);font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:.15s}
+.btn:hover{border-color:#b9c0d0;background:#fafbfe}
+.btn-p{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn-p:hover{background:var(--brand-strong)}
+.btn-dg{color:var(--danger);border-color:#f8cdce} .btn-dg:hover{background:var(--danger-weak)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* 布局 */
+.wrap{display:grid;grid-template-columns:290px minmax(0,1fr);gap:16px;align-items:start}
+.list-h{display:flex;border-bottom:1px solid var(--line);padding:0 6px}
+.ltab{flex:1;padding:13px 8px;font-size:13.5px;color:var(--text-2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none}
+.ltab.on{color:var(--brand);border-bottom-color:var(--brand);font-weight:500}
+.ltab .cnt{display:inline-block;min-width:18px;height:18px;line-height:18px;padding:0 5px;border-radius:999px;background:#eef0f5;color:var(--text-2);font-size:11.5px;margin-left:4px}
+.ltab.on .cnt{background:var(--brand);color:#fff}
+.tasks{max-height:calc(100vh - 260px);overflow:auto}
+.task{padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer;position:relative}
+.task:hover{background:#fafbff}
+.task.on{background:var(--brand-weak);box-shadow:inset 3px 0 0 var(--brand)}
+.task .r1{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.task .tt{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task .r2{font-size:12.5px;color:var(--text-3);display:flex;justify-content:space-between;gap:8px}
+.task .amt{font-variant-numeric:tabular-nums;font-weight:600;font-size:13px}
+.overdue{color:var(--danger)}
+.detail-h{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.dt-t{font-size:16px;font-weight:600;margin-bottom:7px}
+.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--text-3)}
+.tag{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;border:1px solid transparent;white-space:nowrap}
+.tag i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.t-ok{color:var(--ok);background:var(--ok-weak);border-color:#c9ebd9}
+.t-warn{color:var(--warn);background:var(--warn-weak);border-color:#f6e0b8}
+.t-dg{color:var(--danger);background:var(--danger-weak);border-color:#f8cdce}
+.t-br{color:var(--brand);background:var(--brand-weak);border-color:#cfdcff}
+.t-pu{color:var(--purple);background:var(--purple-weak);border-color:#ddd6ff}
+.t-nm{color:var(--text-2);background:#f1f3f7;border-color:#e4e7ee}
+.detail-b{padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) 264px;gap:20px}
+/* 中栏与右栏都必须能收缩到内容最小宽度以下，否则表头 nowrap 会把整页撑出横向滚动 */
+.detail-b>*{min-width:0}
+.sec-t{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--text-3);margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.sec-t:not(:first-child){margin-top:22px}
+.kv{display:grid;grid-template-columns:96px minmax(0,1fr) 96px minmax(0,1fr);gap:11px 14px;margin:0;font-size:13.5px}
+.kv dt{color:var(--text-3);font-size:13px} .kv dd{margin:0}
+.tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px}
+/* 中栏偏窄时不要让编码/金额折行，交给 .tbl-wrap 横向滚动 */
+.tbl-wrap table{min-width:420px}
+td.num{white-space:nowrap}
+th{background:#fafbfd;color:var(--text-2);font-weight:500;text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 11px;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:none}
+.r{text-align:right} .c{text-align:center}
+tfoot td{background:#fafbfd;font-weight:600;border-top:1px solid var(--line)}
+.tl{position:relative;padding-left:22px}
+.tl:before{content:'';position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tl-i{position:relative;padding-bottom:18px}
+.tl-i:last-child{padding-bottom:0}
+.tl-i:before{content:'';position:absolute;left:-22px;top:4px;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--line-strong)}
+.tl-i.done:before{border-color:var(--ok);background:var(--ok-weak)}
+.tl-i.now:before{border-color:var(--brand);background:var(--brand)}
+.tl-i .t{font-size:13px;font-weight:500;margin-bottom:2px}
+.tl-i .d{font-size:12px;color:var(--text-3)}
+.tl-i .n{font-size:12px;color:var(--text-3);margin-top:2px}
+.actbar{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--line)}
+.rem{font-size:13px;padding:10px 12px;border-radius:8px;background:var(--warn-weak);border:1px solid #f6e0b8;color:#7a4a00;margin-bottom:14px}
+.rem.crit{background:var(--danger-weak);border-color:#f8cdce;color:#8f1d20}
+.empty{padding:60px 20px;text-align:center;color:var(--text-3)}
+.toast{position:fixed;left:50%;top:22px;transform:translate(-50%,-140%);background:#1c2230;color:#fff;padding:10px 18px;border-radius:8px;font-size:13.5px;z-index:99;transition:.24s;box-shadow:var(--sh2)}
+.toast.on{transform:translate(-50%,0)}
+.foot{font-size:12px;color:var(--text-3);text-align:center;margin-top:16px}
+/* 窄屏下三栏挤压，键值对由 4 列降为 2 列，避免长单号被折成三行 */
+@media (max-width:1400px){.kv{grid-template-columns:92px minmax(0,1fr)}}
+@media (max-width:1200px){.wrap{grid-template-columns:1fr}.detail-b{grid-template-columns:1fr}.side{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo">示例</span> 示例 ERP</div>
+    <nav class="nav">
+      <div class="nav-title">工作台</div>
+      <a href="#"><span class="ico"></span>我的工作台</a>
+      <a href="#" class="on"><span class="ico"></span>审批中心</a>
+      <div class="nav-title">业务管理</div>
+      <a href="#"><span class="ico"></span>采购管理</a>
+      <a href="#"><span class="ico"></span>销售管理</a>
+      <a href="#"><span class="ico"></span>库存管理</a>
+      <a href="#"><span class="ico"></span>生产管理</a>
+      <div class="nav-title">财务与基础</div>
+      <a href="#"><span class="ico"></span>应收应付</a>
+      <a href="#"><span class="ico"></span>基础数据</a>
+    </nav>
+    <div class="me"><span class="avatar">陈</span><div>陈曦<div>采购经理 · 审批人</div></div></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div class="crumb">工作台 / 审批中心 / <b>我的待办</b></div>
+      <div class="me" style="border:0;padding:0;color:var(--text-3)"><span class="avatar" style="background:#eef3ff;color:var(--brand)">陈</span>陈曦</div>
+    </header>
+
+    <main class="content">
+      <div class="head">
+        <div>
+          <h1 class="h1">审批待办中心</h1>
+          <div class="sub">你当前是 <b>采购经理</b> 审批节点 · 待办 <b id="cntTop">6</b> 条 · 其中 <b style="color:var(--danger)" id="cntOver">1</b> 条已超期</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="toast('已开启「批量同意低风险单据」规则（演示）')">批量规则</button>
+          <button class="btn" onclick="toast('已刷新待办列表')">刷新</button>
+        </div>
+      </div>
+
+      <div class="wrap">
+        <section class="card">
+          <div class="list-h">
+            <button class="ltab on" id="tabTodo" onclick="switchTab('todo',this)">待我审批<span class="cnt" id="cTodo">6</span></button>
+            <button class="ltab" id="tabDone" onclick="switchTab('done',this)">已办结<span class="cnt" id="cDone">4</span></button>
+          </div>
+          <div class="tasks" id="tasks"></div>
+        </section>
+
+        <section class="card" id="detail"></section>
+      </div>
+
+      <div class="foot">本页数据为演示用虚构数据，非真实业务数据 · 由 ERP Page Forge 生成（原型 A5 审批工作台）</div>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* 数据层：真实环境替换为审批引擎返回的任务列表 */
+const TODO=[
+ {id:'T1',type:'采购申请单',code:'PR-2026-09-0173',title:'三季度产线扩产备件采购',by:'李静',byDept:'生产制造部',at:'2026-09-17 08:42',node:'采购经理核价',leftH:6,amt:199236.00,
+  lines:[['MAT-2026-0012','交流伺服电机 ASD-B2 750W',20,'台',4296.00,85920.00],['MAT-2026-0047','铝合金型材 6063-T5',1200,'kg',26.50,31800.00],['MAT-2026-0074','直线导轨 HGR25',8,'套',1180.00,9440.00],['MAT-2026-0031','精密减速机 RV-40E',10,'台',6850.80,68508.00],['MAT-2026-0058','工业控制板 PCBA-02',4,'件',892.00,3568.00]],
+  memo:'三季度产线扩产所需备件，用于 3 号车间伺服系统改造。',urgent:true},
+ {id:'T2',type:'销售订单',code:'SO-20260917-0081',title:'华东精密制造 标准订单（超信用额度）',by:'张明',byDept:'销售部',at:'2026-09-17 09:05',node:'销售经理审批',leftH:20,amt:286400.00,
+  lines:[['MAT-2026-0012','交流伺服电机 ASD-B2 750W',40,'台',4296.00,171840.00],['MAT-2026-0031','精密减速机 RV-40E',16,'台',7160.00,114560.00]],
+  memo:'客户信用额度 ¥300.0 万，已用 92%（可用 ¥240,000），本单 ¥286,400 占用后将超出额度 ¥46,400，请确认是否放行。',urgent:false},
+ {id:'T3',type:'采购申请单',code:'PR-2026-09-0169',title:'研发中心样件采购',by:'周昊',byDept:'研发中心',at:'2026-09-16 17:30',node:'采购经理核价',leftH:31,amt:62452.00,
+  lines:[['MAT-2026-0066','气动执行器 AT-88',30,'台',1160.00,34800.00],['MAT-2026-0058','工业控制板 PCBA-02',31,'件',892.00,27652.00]],
+  memo:'新机型打样用件，需求到货 2026-09-28。',urgent:false},
+ {id:'T4',type:'费用报销单',code:'FB-2026-09-0321',title:'供应商现场审核差旅费报销',by:'赵敏',byDept:'质量管理部',at:'2026-09-16 15:12',node:'部门经理审批',leftH:2,amt:4860.00,
+  lines:[['—','交通费（高铁往返）',1,'批',1860.00,1860.00],['—','住宿费（2 晚）',2,'晚',860.00,1720.00],['—','市内交通及餐补',4,'天',320.00,1280.00]],
+  memo:'赴苏州联动电子执行供应商年度现场审核，共 2 天。',urgent:true},
+ {id:'T5',type:'合同审批',code:'CT-2026-0231',title:'华东精密制造 年度框架采购协议',by:'王磊',byDept:'销售部',at:'2026-09-15 11:20',node:'采购经理会签',leftH:44,amt:2860000.00,
+  lines:[['—','框架协议总金额（年度预估）',1,'项',2860000.00,2860000.00]],
+  memo:'年度框架协议，账期 60 天，需采购与财务会签后生效。',urgent:false},
+ {id:'T6',type:'库存报废申请',code:'SC-2026-09-0014',title:'呆滞物料报废处置（旧型号电机）',by:'赵敏',byDept:'计划物控部',at:'2026-09-14 16:48',node:'采购经理审批',leftH:-6,amt:486160.00,
+  lines:[['MAT-2025-0188','直流无刷电机 BLDC-400W（旧款）',412,'台',1180.00,486160.00]],
+  memo:'库龄 312 天，已无在用机型可替代，申请折价处置。',urgent:false}
+];
+const DONE=[
+ {id:'D1',type:'采购申请单',code:'PR-2026-09-0161',title:'成品仓包装材料采购',by:'李静',byDept:'生产制造部',at:'2026-09-15 10:02',node:'已办结（同意）',leftH:0,amt:32400.00,result:'agree',at2:'2026-09-15 10:40',lines:[['MAT-2026-0047','瓦楞纸箱 600×400×300',2000,'个',12.60,25200.00],['—','缠绕膜 50cm',300,'卷',24.00,7200.00]],memo:'常规包材补货。'},
+ {id:'D2',type:'销售订单',code:'SO-20260912-0069',title:'杭州科锐 加急订单',by:'李静',byDept:'销售部',at:'2026-09-12 09:30',node:'已办结（同意）',leftH:0,amt:1286000.00,result:'agree',at2:'2026-09-12 11:15',lines:[['MAT-2026-0012','交流伺服电机 ASD-B2 750W',180,'台',4296.00,773280.00],['MAT-2026-0031','精密减速机 RV-40E',64,'台',8011.25,512720.00]],memo:'客户要求 10 月 5 日前交付，已协调生产排产。'},
+ {id:'D3',type:'费用报销单',code:'FB-2026-09-0309',title:'客户拜访差旅费',by:'张明',byDept:'销售部',at:'2026-09-11 14:20',node:'已办结（驳回）',leftH:0,amt:12680.00,result:'reject',at2:'2026-09-11 16:05',reason:'住宿标准超差旅制度上限（860 元/晚 > 600 元/晚），请调整后重新提交。',lines:[['—','交通费',1,'批',3260.00,3260.00],['—','住宿费（5 晚）',5,'晚',860.00,4300.00],['—','业务招待费',4,'次',1280.00,5120.00]],memo:'拜访华东精密制造与苏州联动电子。'},
+ {id:'D4',type:'合同审批',code:'CT-2026-0224',title:'无锡双鹿机械 设备采购合同',by:'陈曦',byDept:'采购部',at:'2026-09-09 09:10',node:'已办结（同意）',leftH:0,amt:942000.00,result:'agree',at2:'2026-09-09 15:32',lines:[['—','非标自动化装配线（含安装调试）',1,'套',942000.00,942000.00]],memo:'分三期付款，验收后付尾款 30%。'}
+];
+const money=n=>'¥'+Number(n).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+let tab='todo', cur=null;
+
+function switchTab(t,el){
+  tab=t;
+  document.querySelectorAll('.ltab').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  renderList();
+}
+function list(){ return tab==='todo'?TODO:DONE; }
+function renderList(){
+  const arr=list();
+  document.getElementById('cTodo').textContent=TODO.length;
+  document.getElementById('cDone').textContent=DONE.length;
+  document.getElementById('cntTop').textContent=TODO.length;
+  document.getElementById('cntOver').textContent=TODO.filter(t=>t.leftH<0).length;
+  document.getElementById('tasks').innerHTML=arr.map(t=>{
+    const over=t.leftH<0, soon=(!over&&t.leftH<=8);
+    const meta = tab==='todo'
+      ? (over?`<span class="overdue">已超期 ${Math.abs(t.leftH)} 小时</span>`:`剩余 ${t.leftH} 小时`)
+      : `<span class="tag ${t.result==='reject'?'t-dg':'t-ok'}"><i></i>${t.result==='reject'?'已驳回':'已同意'}</span> <span>${t.at2||''}</span>`;
+    return `<div class="task ${cur===t.id?'on':''}" onclick="select('${t.id}')">
+      <div class="r1"><span class="tt">${t.title}</span><span class="amt num">${money(t.amt)}</span></div>
+      <div class="r2"><span>${t.type} · ${t.code}</span><span class="${over?'overdue':(soon?'':'')}" style="${soon?'color:var(--warn)':''}">${meta}</span></div>
+    </div>`;
+  }).join('') || '<div class="empty">暂无记录</div>';
+}
+function select(id){
+  cur=id;
+  const t=list().find(x=>x.id===id);
+  renderList();
+  if(!t) return;
+  const isTodo=tab==='todo';
+  const sum=t.lines.reduce((s,l)=>s+l[5],0);
+  const trace=isTodo
+    ? [['提交申请',t.by+'（'+t.byDept+'）',t.at,'done'],['部门经理审批','已同意 · 采购主管','2026-09-17 09:10','done'],[t.node,'待你处理','当前节点','now'],['财务预算校验','等待前序节点','—',''],['转采购订单','等待前序节点','—','']]
+    : [['提交申请',t.by+'（'+t.byDept+'）',t.at,'done'],[t.node.split('（')[0]||'审批',t.at2+' · 陈曦','','done'],['单据状态：'+(t.result==='reject'?'已驳回':'已通过'),t.result==='reject'?'已退回申请人修改':'已进入下一环节',t.at2,'done']];
+  document.getElementById('detail').innerHTML=`
+    <div class="detail-h">
+      <div>
+        <div class="dt-t">${t.title}</div>
+        <div class="meta">
+          <span class="tag t-br">${t.type}</span>
+          <span class="num">${t.code}</span><span>·</span>
+          <span>提交人 ${t.by}（${t.byDept}）</span><span>·</span>
+          <span class="num">${t.at}</span>
+          ${isTodo&&t.urgent?'<span class="tag t-warn"><i></i>加急</span>':''}
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12.5px;color:var(--text-3);margin-bottom:4px">申请金额</div>
+        <div style="font-size:22px;font-weight:600" class="num">${money(t.amt)}</div>
+      </div>
+    </div>
+    <div class="detail-b">
+      <div>
+        ${isTodo?`<div class="rem ${t.leftH<0?'crit':''}">
+          ${t.leftH<0?`该单据已超期 ${Math.abs(t.leftH)} 小时，请尽快处理（超期将计入部门审批时效考核）。`
+                    :t.leftH<=8?`该单据剩余处理时限仅 ${t.leftH} 小时，请优先处理。`
+                    :`处理时限剩余 ${t.leftH} 小时，请在时限内完成审批。`}
+        </div>`:''}
+        <div class="sec-t">单据摘要</div>
+        <dl class="kv">
+          <dt>单据编号</dt><dd class="num">${t.code}</dd>
+          <dt>单据类型</dt><dd>${t.type}</dd>
+          <dt>申请部门</dt><dd>${t.byDept}</dd>
+          <dt>申请人</dt><dd>${t.by}</dd>
+          <dt>当前节点</dt><dd>${t.node}</dd>
+          <dt>提交时间</dt><dd class="num">${t.at}</dd>
+          <dt>用途说明</dt><dd style="grid-column:span 3">${t.memo||'—'}</dd>
+        </dl>
+        <div class="sec-t">明细信息</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>物料编码</th><th>物料名称 / 项目</th><th class="r">数量</th><th class="c">单位</th><th class="r">单价</th><th class="r">金额</th></tr></thead>
+            <tbody>${t.lines.map(l=>`<tr><td class="num">${l[0]}</td><td>${l[1]}</td><td class="r num">${l[2]}</td><td class="c">${l[3]}</td><td class="r num">${money(l[4])}</td><td class="r num">${money(l[5])}</td></tr>`).join('')}</tbody>
+            <tfoot><tr><td colspan="5" class="r">合计</td><td class="r num">${money(sum)}</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="sec-t">审批轨迹</div>
+        <div class="tl">${trace.map(tr=>`<div class="tl-i ${tr[3]}">
+          <div class="t">${tr[0]}</div><div class="d">${tr[1]}</div><div class="n num">${tr[2]}</div></div>`).join('')}</div>
+        ${isTodo?`<div style="margin-top:18px;font-size:12.5px;color:var(--text-3);line-height:1.8">
+          审批留痕要求：本节点所有操作将记录操作人与时间，驳回必须填写原因，生成类能力不得自动提交。</div>`:''}
+      </div>
+    </div>
+    ${isTodo?`<div class="actbar">
+      <button class="btn" onclick="transfer()">转办</button>
+      <button class="btn btn-dg" onclick="reject()">驳回</button>
+      <button class="btn btn-p" onclick="agree()">同意并提交下一节点</button>
+    </div>`:`<div class="actbar"><button class="btn" onclick="toast('已复制单据链接（演示）')">复制链接</button></div>`}`;
+}
+function act(kind){
+  const t=TODO.find(x=>x.id===cur); if(!t) return;
+  if(kind==='reject'){
+    const why=prompt('请输入驳回原因（必填，将同步通知申请人）：','');
+    if(!why) return toast('驳回已取消：必须填写驳回原因');
+    TODO.splice(TODO.indexOf(t),1);
+    DONE.unshift({...t,node:'已办结（驳回）',result:'reject',at2:'2026-09-17 16:20',reason:why});
+    toast('已驳回并通知申请人：'+t.by);
+  } else if(kind==='transfer'){
+    const who=prompt('转办给（输入审批人姓名）：','王磊');
+    if(!who) return toast('转办已取消');
+    TODO.splice(TODO.indexOf(t),1);
+    toast(`已将 ${t.code} 转办给 ${who}，并同步通知`);
+  } else {
+    if(!confirm(`确认同意「${t.title}」？\n金额 ${money(t.amt)}，同意后将流转至下一审批节点。`)) return;
+    TODO.splice(TODO.indexOf(t),1);
+    DONE.unshift({...t,node:'已办结（同意）',result:'agree',at2:'2026-09-17 16:20'});
+    toast('已同意，单据已流转至下一节点：财务预算校验');
+  }
+  const next=TODO[0];
+  if(next){ select(next.id); } else { cur=null; renderList(); document.getElementById('detail').innerHTML='<div class="empty"><div style="font-size:26px;margin-bottom:8px">✓</div>待办已清空，暂无需要你处理的单据</div>'; }
+}
+function agree(){ act('agree'); } function reject(){ act('reject'); } function transfer(){ act('transfer'); }
+let tid; function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(tid); tid=setTimeout(()=>t.classList.remove('on'),2400); }
+renderList(); select('T1');
+</script>
+</body>
+</html>

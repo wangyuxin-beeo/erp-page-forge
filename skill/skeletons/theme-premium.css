@@ -1,0 +1,82 @@
+/* ===== 主题：高级感（premium）· 覆盖层 =====
+ * 只覆盖视觉，不改结构 class，不动防坑规则（nowrap / minmax / tabular-nums 均保留）。
+ * 色值一律走变量；color-mix 用于派生半透明色，避免写死 hex。
+ */
+body{letter-spacing:.005em;-webkit-font-smoothing:antialiased}
+h1{font-weight:650;letter-spacing:-.01em}
+.sub{color:var(--text-3)}
+
+/* 侧栏：浅色 + 胶囊选中态 */
+.side{border-right:1px solid var(--sidebar-border)}
+.side .brand{padding:20px 20px 16px;font-size:15px;letter-spacing:-.01em}
+.side .brand .dot{border-radius:8px;background:linear-gradient(135deg,var(--brand),var(--purple));
+  box-shadow:0 4px 12px -4px color-mix(in srgb,var(--brand) 60%,transparent)}
+.side .nav-title{padding:18px 20px 6px;font-size:10.5px;letter-spacing:.12em}
+.side a.nav{margin:2px 10px;padding:8px 12px;border-left:0;border-radius:9px;font-weight:500}
+.side a.nav.on{background:var(--sidebar-active);color:var(--brand);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--brand) 14%,transparent)}
+.side a.nav.on .ico{color:var(--brand);opacity:1}
+
+/* 顶栏：半透明毛玻璃 */
+.top{background:color-mix(in srgb,var(--card) 82%,transparent);backdrop-filter:saturate(1.6) blur(10px);border-bottom:1px solid var(--line)}
+.who .avatar{background:linear-gradient(135deg,var(--brand-soft),color-mix(in srgb,var(--purple) 16%,var(--card)))}
+
+/* 卡片：去硬边，靠阴影分层 */
+.card,.col,.kpi{border-color:color-mix(in srgb,var(--line) 70%,transparent)}
+.card+.card{margin-top:20px}
+.card-h{padding:16px 22px;font-size:14px;border-bottom-color:var(--line)}
+.card-b{padding:20px 22px}
+.filter{padding:20px 22px;gap:14px 18px}
+.filter-act{padding:0 22px 20px}
+.notice-bar{border-radius:12px;border-color:color-mix(in srgb,var(--brand) 18%,transparent);color:var(--brand-dark)}
+
+/* 按钮：更高、更柔 */
+.btn{height:34px;padding:0 15px;font-weight:500;transition:background .15s,border-color .15s,box-shadow .15s,color .15s}
+.btn:hover{box-shadow:0 0 0 3px var(--brand-soft)}
+.btn-p{box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 6px 14px -6px color-mix(in srgb,var(--brand) 70%,transparent)}
+.btn-sm{height:28px;padding:0 10px;border-radius:8px}
+input,select,textarea{height:34px;background:var(--card);transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{box-shadow:0 0 0 4px var(--brand-soft)}
+
+/* 工具条与表格：表头去底色，行距放大 */
+.toolbar{background:transparent;padding:12px 22px}
+th{background:var(--card);color:var(--text-3);font-weight:600;font-size:12px;letter-spacing:.02em}
+th,td{padding:12px 10px}
+th:first-child,td:first-child{padding-left:18px}
+td .btn-sm+.btn-sm{margin-left:2px}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:color-mix(in srgb,var(--brand-soft) 60%,var(--card))}
+tfoot td{background:color-mix(in srgb,var(--page-bg) 60%,var(--card))}
+.code{font-weight:600}
+
+/* 标签：更扁更精致 */
+.tag{padding:3px 10px;font-weight:500;font-size:12px}
+.tag.t-ok{background:color-mix(in srgb,var(--success) 11%,var(--card))}
+.tag.t-warn{background:color-mix(in srgb,var(--warning) 12%,var(--card))}
+.tag.t-dg{background:color-mix(in srgb,var(--danger) 10%,var(--card))}
+.tag.t-pu{background:color-mix(in srgb,var(--purple) 11%,var(--card))}
+.tag.t-nt{background:color-mix(in srgb,var(--text-3) 12%,var(--card))}
+
+/* 分页 */
+.pager{padding:14px 22px}
+.pg{border-radius:9px;min-width:32px;height:30px}
+.pg.on{box-shadow:0 6px 14px -6px color-mix(in srgb,var(--brand) 70%,transparent)}
+
+/* KPI：顶部渐变细条 + 更大数字 */
+.kpi{padding:18px 20px}
+.kpi .bar{top:0;bottom:auto;height:3px;background:linear-gradient(90deg,var(--brand),var(--purple))}
+.kpi .v{letter-spacing:-.02em}
+
+/* A5 / A3 */
+.tab{border-radius:9px}
+.task{padding:13px 15px}
+.task.on{border-left-color:var(--brand);background:color-mix(in srgb,var(--brand-soft) 70%,var(--card))}
+.dtab.on{border-bottom-width:2px}
+.grp-h{border-left:0;padding-left:0}
+.grp-h::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--brand);margin-right:8px;vertical-align:middle}
+
+/* 抽屉 / 弹窗 / Toast */
+.mask,.modal{background:rgba(22,22,40,.32);backdrop-filter:blur(2px)}
+.drawer{border-left:0;box-shadow:-24px 0 48px -24px rgba(22,22,40,.28)}
+.modal-box{border-radius:16px;box-shadow:0 24px 60px -20px rgba(22,22,40,.35)}
+.toast{border-radius:12px;background:var(--text-1);box-shadow:0 12px 30px -12px rgba(22,22,40,.45)}
+.foot-bar{background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:blur(10px)}

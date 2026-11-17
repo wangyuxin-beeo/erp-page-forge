@@ -1,0 +1,997 @@
+{
+  "specVersion": "1.0",
+  "title": "components",
+  "meta": {
+    "purpose": "组件契约层 —— PageSpec 只声明「语义组件 + 能力」，渲染层按 render_mode 把它映射成具体实现。",
+    "layer": "第 ② 层。与具体组件库无关：换库只改本文件 targets 与第 ③ 层实现，PageSpec、四类断言、验收报告全不动。",
+    "status": "Only self rendering is implemented; public library mappings are design references.",
+    "consumers": [
+      "人读 / 模型读：写 PageSpec 时从 components 里取 component id 与 capabilities",
+      "build/forge.py：暂未消费（render_mode 分派未实现，见 docs/component-library-strategy.md）",
+      "未来渲染适配层：按 targets 派发到各库"
+    ],
+    "naming": "id 为 kebab-case 英文语义名；zh 与 spec/archetypes.json 的 regions 中文写法对齐差异一律记入 aliases，避免同一块区域出现两个名字。",
+    "aliases_rule": "aliases 必须收录 spec/archetypes.json 里 region 的全部写法（含括号后缀变体），以便从原型区域名反查组件 id。"
+  },
+  "renderModes": {
+    "self": {
+      "label": "自绘 HTML",
+      "kind": "native",
+      "ecosystem": "—",
+      "status": "active",
+      "note": "唯一实现。产物为单文件 HTML，零依赖，可像素比对。"
+    },
+    "antd": {
+      "label": "Ant Design",
+      "kind": "web",
+      "ecosystem": "React",
+      "status": "planned",
+      "note": "已登记组件名，未接入。仅作术语与分类的交叉核对基准。"
+    },
+    "arco": {
+      "label": "Arco Design",
+      "kind": "web",
+      "ecosystem": "React / Vue",
+      "status": "planned",
+      "note": "与 antd 分类高度一致，作为交叉核对参考。"
+    },
+    "element": {
+      "label": "Element Plus",
+      "kind": "web",
+      "ecosystem": "Vue 3",
+      "status": "planned",
+      "note": "Vue 生态对照。"
+    }
+  },
+  "slots": {
+    "note": "组件在页面框架中的位置。用于判断吸附、联动这类依赖位置的能力是否成立。",
+    "sidebar": "左侧贯通区",
+    "topbar": "内容区顶部通栏",
+    "header": "内容区起始的标题与操作区",
+    "body": "内容区主体",
+    "aside": "内容区右侧栏（抽屉 / 辅助面板）",
+    "footer": "容器底部吸附区",
+    "overlay": "浮层（不占文档流）",
+    "none": "不落页面框架（如空状态、骨架屏这类状态型组件）"
+  },
+  "capabilities": {
+    "note": "能力项是「同一组件的不同形态」的表达方式 —— 例如 A1 的「页面头」、A4 的「页面头（含时间范围）」、A6 的「页面头（切换/导出/打印）」是同一个组件开不同能力。",
+    "sticky": "吸顶 / 黏附：滚动时固定在视口边缘",
+    "float": "悬浮：脱离文档流并带投影",
+    "collapsible": "可折叠：可收起为图标模式",
+    "scroll-spy": "联动：高亮随内容滚动自动切换（单张截图不可判定）",
+    "group": "分组：含分组标题与分组内项",
+    "sub-menu": "多级：支持二级及以上展开",
+    "select": "单选",
+    "multi-select": "多选",
+    "checkable": "行可勾选",
+    "sortable": "列可排序",
+    "resizable": "列宽可拖拽",
+    "fixed-column": "列固定（左右冻结）",
+    "virtual-scroll": "虚拟滚动",
+    "inline-edit": "单元格行内编辑",
+    "tree-data": "树形数据",
+    "pagination": "分页",
+    "page-size": "每页条数可切换",
+    "summary-row": "底部汇总行",
+    "bulk-actions": "批量操作（依赖 checkable）",
+    "row-actions": "行内操作",
+    "header-actions": "页面级操作",
+    "export": "导出",
+    "print": "打印",
+    "time-range": "时间范围切换",
+    "switch-view": "视图切换（如列表 / 卡片）",
+    "attachment": "附件上传与列表",
+    "version-history": "版本历史"
+  },
+  "components": {
+    "app-shell": {
+      "zh": "页面框架",
+      "aliases": [],
+      "slot": "none",
+      "archetypes": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6"
+      ],
+      "capabilities": [
+        "sticky",
+        "collapsible"
+      ],
+      "defaults": [
+        "sticky"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Layout",
+        "arco": "Layout",
+        "element": "el-container"
+      },
+      "note": "顶层容器：侧栏 + 顶栏 + 内容区。决定其余组件的可用宽度。"
+    },
+    "nav-side": {
+      "zh": "侧边导航",
+      "aliases": [
+        "侧边栏",
+        "侧栏",
+        "菜单"
+      ],
+      "slot": "sidebar",
+      "archetypes": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6"
+      ],
+      "capabilities": [
+        "sticky",
+        "collapsible",
+        "group",
+        "sub-menu"
+      ],
+      "defaults": [
+        "sticky",
+        "group"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Layout.Sider + Menu",
+        "arco": "Layout.Sider + Menu",
+        "element": "el-menu"
+      },
+      "note": "ERP 惯例深色侧栏 + 分组菜单 + 选中态色块。浅色侧栏时文字色需按底色亮度反转。"
+    },
+    "nav-top": {
+      "zh": "顶部导航",
+      "aliases": [
+        "顶部导航栏",
+        "顶栏"
+      ],
+      "slot": "topbar",
+      "archetypes": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6"
+      ],
+      "capabilities": [
+        "sticky",
+        "float"
+      ],
+      "defaults": [
+        "sticky"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Layout.Header + Menu",
+        "arco": "Layout.Header",
+        "element": "el-header"
+      },
+      "note": "承载面包屑与用户区。与面包屑组件组合出现。"
+    },
+    "breadcrumb": {
+      "zh": "面包屑",
+      "aliases": [
+        "面包屑导航"
+      ],
+      "slot": "topbar",
+      "archetypes": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Breadcrumb",
+        "arco": "Breadcrumb",
+        "element": "el-breadcrumb"
+      },
+      "note": "落在 PageSpec 的 page.breadcrumb（ERP 惯例三级：模块 / 菜单 / 当前页）。"
+    },
+    "page-header": {
+      "zh": "页面头",
+      "aliases": [
+        "页头",
+        "页面头（含时间范围）",
+        "页面头（切换/导出/打印）"
+      ],
+      "slot": "header",
+      "archetypes": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6"
+      ],
+      "capabilities": [
+        "header-actions",
+        "time-range",
+        "switch-view",
+        "export",
+        "print",
+        "version-history"
+      ],
+      "defaults": [
+        "header-actions"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "PageHeader + Typography.Title + Space",
+        "arco": "PageHeader",
+        "element": "el-page-header"
+      },
+      "note": "★ 归一化示例：archetypes 里 A4 的「页面头（含时间范围）」与 A6 的「页面头（切换/导出/打印）」是同一组件开不同 capability，不另立组件。"
+    },
+    "filter-bar": {
+      "zh": "查询区",
+      "aliases": [
+        "查询条件",
+        "筛选区"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A1",
+        "A6"
+      ],
+      "capabilities": [
+        "collapsible"
+      ],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Form + Input/Select/DatePicker",
+        "arco": "Form",
+        "element": "el-form"
+      },
+      "note": "含查询与重置两个动作（A1 有硬性断言）。条件过多时收进折叠。"
+    },
+    "condition-bar": {
+      "zh": "条件条",
+      "aliases": [
+        "条件区"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A6"
+      ],
+      "capabilities": [
+        "select",
+        "time-range"
+      ],
+      "defaults": [
+        "select",
+        "time-range"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Form + Select + DatePicker.RangePicker",
+        "arco": "Form",
+        "element": "el-form"
+      },
+      "note": "对账页的期间与口径选择，比 filter-bar 轻，通常单行不折叠。"
+    },
+    "toolbar": {
+      "zh": "工具条",
+      "aliases": [
+        "批量操作条"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A1"
+      ],
+      "capabilities": [
+        "bulk-actions",
+        "export"
+      ],
+      "defaults": [
+        "bulk-actions"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Space + Button + Alert",
+        "arco": "Space + Button",
+        "element": "el-space"
+      },
+      "note": "显示「已选 N 项」（A1 硬性断言）；未选中时批量按钮保持 disabled 而不是隐藏。"
+    },
+    "data-table": {
+      "zh": "数据表格",
+      "aliases": [
+        "数据表格",
+        "明细台账",
+        "表格"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A1",
+        "A6"
+      ],
+      "capabilities": [
+        "checkable",
+        "sortable",
+        "resizable",
+        "fixed-column",
+        "virtual-scroll",
+        "inline-edit",
+        "tree-data",
+        "pagination",
+        "page-size",
+        "summary-row",
+        "row-actions"
+      ],
+      "defaults": [
+        "sortable",
+        "pagination",
+        "row-actions"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Table / ProTable",
+        "arco": "Table",
+        "element": "el-table"
+      },
+      "note": "★ ERP 的核心组件，也是决定要不要换渲染目标的主战场。数字列必须右对齐 + nowrap + tabular-nums。"
+    },
+    "detail-table": {
+      "zh": "明细表格",
+      "aliases": [
+        "明细信息卡",
+        "明细行"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A2"
+      ],
+      "capabilities": [
+        "inline-edit",
+        "sortable",
+        "summary-row",
+        "row-actions",
+        "checkable"
+      ],
+      "defaults": [
+        "inline-edit",
+        "summary-row"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Table（可编辑单元格）",
+        "arco": "Table",
+        "element": "el-table"
+      },
+      "note": "单据内嵌明细：行数少、可增删行、行金额自动计算（A2 有交互断言）。"
+    },
+    "pagination": {
+      "zh": "分页器",
+      "aliases": [
+        "分页"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A1",
+        "A6"
+      ],
+      "capabilities": [
+        "page-size"
+      ],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Pagination",
+        "arco": "Pagination",
+        "element": "el-pagination"
+      },
+      "note": "含「共 N 条」（A1 硬性断言 textMatch）。国际化时文案要走 locale key。"
+    },
+    "form-card": {
+      "zh": "单据信息卡",
+      "aliases": [
+        "单据信息卡",
+        "表单卡"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A2"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Card + Form",
+        "arco": "Card + Form",
+        "element": "el-card + el-form"
+      },
+      "note": "字段顺序即呈现顺序：先身份后业务、先编码后名称、先金额后时间。"
+    },
+    "info-group": {
+      "zh": "信息分组",
+      "aliases": [
+        "信息分组",
+        "描述列表",
+        "折叠面板"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A3"
+      ],
+      "capabilities": [
+        "collapsible",
+        "group"
+      ],
+      "defaults": [
+        "group"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Descriptions / Collapse",
+        "arco": "Descriptions",
+        "element": "el-descriptions"
+      },
+      "note": "A3 详情页主体：标签 + 值成对，多列等距，无输入框边框。"
+    },
+    "attachment-card": {
+      "zh": "附件与说明卡",
+      "aliases": [
+        "附件与说明卡",
+        "附件区"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A2"
+      ],
+      "capabilities": [
+        "attachment",
+        "version-history"
+      ],
+      "defaults": [
+        "attachment"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Card + Upload + List",
+        "arco": "Card + Upload",
+        "element": "el-card + el-upload"
+      },
+      "note": "文件列表 + 上传入口 + 备注说明。"
+    },
+    "sticky-action-bar": {
+      "zh": "底部吸附动作条",
+      "aliases": [
+        "底部吸附动作条",
+        "底部审批动作",
+        "底栏"
+      ],
+      "slot": "footer",
+      "archetypes": [
+        "A2",
+        "A5"
+      ],
+      "capabilities": [
+        "sticky",
+        "float",
+        "header-actions"
+      ],
+      "defaults": [
+        "sticky"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Affix + Space + Button",
+        "arco": "Affix",
+        "element": "el-affix"
+      },
+      "note": "A2 必需区：保证主操作在长表单中随时可见。主色实心按钮每屏 ≤1 个。"
+    },
+    "summary-bar": {
+      "zh": "头部摘要条",
+      "aliases": [
+        "头部摘要条",
+        "摘要条"
+      ],
+      "slot": "header",
+      "archetypes": [
+        "A3"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Descriptions（行内）",
+        "arco": "Descriptions",
+        "element": "el-descriptions"
+      },
+      "note": "横向一排 3–6 组「标签 + 值」，一屏交代核心信息。"
+    },
+    "alert-banner": {
+      "zh": "防错提示条",
+      "aliases": [
+        "防错提示条",
+        "提示条",
+        "警告提示",
+        "风险提示"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A2"
+      ],
+      "capabilities": [
+        "float"
+      ],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Alert",
+        "arco": "Alert",
+        "element": "el-alert"
+      },
+      "note": "常驻在页面头下方，说明规则或风险约束（如「提交后不可修改」）。与 toast 的区别：它不消失。"
+    },
+    "tabs": {
+      "zh": "标签页",
+      "aliases": [
+        "Tabs",
+        "选项卡"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A3"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Tabs",
+        "arco": "Tabs",
+        "element": "el-tabs"
+      },
+      "note": "平级切换内容不跳页。落在 PageSpec 的 extends（延伸区）。"
+    },
+    "kpi-row": {
+      "zh": "KPI 卡行",
+      "aliases": [
+        "KPI 卡行",
+        "（可选）关键指标小卡",
+        "指标卡"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A3",
+        "A4"
+      ],
+      "capabilities": [
+        "time-range"
+      ],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Card + Statistic",
+        "arco": "Card + Statistic",
+        "element": "el-card + el-statistic"
+      },
+      "note": "数值字号 ≥24px，含标题、单位与环比。A4 看板固定 4 张。"
+    },
+    "chart-area": {
+      "zh": "图表区",
+      "aliases": [
+        "中区图表",
+        "图表"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A4"
+      ],
+      "capabilities": [
+        "time-range",
+        "switch-view"
+      ],
+      "defaults": [
+        "time-range"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Card + 图表库（未定）",
+        "arco": "Card + 图表库（未定）",
+        "element": "el-card"
+      },
+      "note": "图表实现依赖第三方图表库，本项目刻意未引入 —— 这是另一个待定的渲染决策，与本文件同级。"
+    },
+    "rank-list": {
+      "zh": "清单 / 排行",
+      "aliases": [
+        "下区清单/排行",
+        "排行"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A4"
+      ],
+      "capabilities": [
+        "sortable"
+      ],
+      "defaults": [
+        "sortable"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Card + List",
+        "arco": "Card + List",
+        "element": "el-card + el-table"
+      },
+      "note": "带序号或排名的条目列表，通常配进度条表达占比。"
+    },
+    "task-list": {
+      "zh": "任务列表",
+      "aliases": [
+        "左栏任务列表",
+        "待办列表"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A5"
+      ],
+      "capabilities": [
+        "checkable",
+        "group"
+      ],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "List / Menu",
+        "arco": "List",
+        "element": "el-menu"
+      },
+      "note": "每项含标题 + 元信息，选中项联动中栏详情。"
+    },
+    "detail-panel": {
+      "zh": "单据详情面板",
+      "aliases": [
+        "中栏单据详情",
+        "详情面板"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A5"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Descriptions + Table",
+        "arco": "Descriptions",
+        "element": "el-descriptions"
+      },
+      "note": "左栏选中后在中栏呈现的完整单据，通常复用 form-card / info-group / detail-table。"
+    },
+    "timeline": {
+      "zh": "审批轨迹",
+      "aliases": [
+        "右栏审批轨迹",
+        "时间轴"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A5"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Timeline",
+        "arco": "Timeline",
+        "element": "el-timeline"
+      },
+      "note": "节点顺序取自 statusMachine.nodeFlow，当前节点高亮。"
+    },
+    "money-summary": {
+      "zh": "资金摘要",
+      "aliases": [
+        "资金摘要",
+        "金额汇总"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A6"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Card + Statistic",
+        "arco": "Card + Statistic",
+        "element": "el-card"
+      },
+      "note": "期初 / 发生 / 期末三栏式，金额统一 ¥1,234,567.89。"
+    },
+    "summary-row": {
+      "zh": "固定汇总行",
+      "aliases": [
+        "固定汇总行",
+        "合计行"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A6"
+      ],
+      "capabilities": [
+        "summary-row"
+      ],
+      "defaults": [
+        "summary-row"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Table.Summary",
+        "arco": "Table（summary）",
+        "element": "el-table（show-summary）"
+      },
+      "note": "汇总必须等于明细之和（容差 0.01，A6 有数据断言）。"
+    },
+    "diff-note": {
+      "zh": "差异说明",
+      "aliases": [
+        "差异说明",
+        "备注说明"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A6"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Alert",
+        "arco": "Alert",
+        "element": "el-alert"
+      },
+      "note": "解释差异成因，是「有异常数据」要求的落点。"
+    },
+    "status-tag": {
+      "zh": "状态标签",
+      "aliases": [
+        "标签",
+        "徽标",
+        "状态列"
+      ],
+      "slot": "none",
+      "archetypes": [
+        "A1",
+        "A2",
+        "A3",
+        "A5",
+        "A6"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Tag / Badge",
+        "arco": "Tag / Badge",
+        "element": "el-tag"
+      },
+      "note": "胶囊形，配色取自 statusMachine.states[].tone 的语义色。"
+    },
+    "drawer": {
+      "zh": "抽屉",
+      "aliases": [
+        "详情抽屉",
+        "侧滑面板"
+      ],
+      "slot": "aside",
+      "archetypes": [
+        "A1",
+        "A3"
+      ],
+      "capabilities": [
+        "float"
+      ],
+      "defaults": [
+        "float"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Drawer",
+        "arco": "Drawer",
+        "element": "el-drawer"
+      },
+      "note": "不离开列表就能看详情，宽 360–720px。"
+    },
+    "modal": {
+      "zh": "对话框",
+      "aliases": [
+        "弹窗",
+        "气泡确认框"
+      ],
+      "slot": "overlay",
+      "archetypes": [
+        "A1",
+        "A5"
+      ],
+      "capabilities": [
+        "float"
+      ],
+      "defaults": [
+        "float"
+      ],
+      "targets": {
+        "self": "自绘",
+        "antd": "Modal / Popconfirm",
+        "arco": "Modal / Popconfirm",
+        "element": "el-dialog"
+      },
+      "note": "破坏性动作（驳回/作废/停用）必须二次确认，对应 actions.confirm。"
+    },
+    "toast": {
+      "zh": "轻提示",
+      "aliases": [
+        "全局提示",
+        "消息提示",
+        "通知提醒"
+      ],
+      "slot": "overlay",
+      "archetypes": [
+        "A1",
+        "A2",
+        "A4",
+        "A5",
+        "A6"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "message / notification",
+        "arco": "Message",
+        "element": "ElMessage"
+      },
+      "note": "操作完成的即时反馈。"
+    },
+    "skeleton": {
+      "zh": "骨架屏",
+      "aliases": [
+        "加载中",
+        "占位"
+      ],
+      "slot": "none",
+      "archetypes": [],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Skeleton / Spin",
+        "arco": "Skeleton",
+        "element": "el-skeleton"
+      },
+      "note": "产物为静态演示，通常不出现；登记以备将来接真实接口。"
+    },
+    "empty-state": {
+      "zh": "空状态",
+      "aliases": [
+        "空状态",
+        "结果页"
+      ],
+      "slot": "none",
+      "archetypes": [
+        "A1",
+        "A5",
+        "A6"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Empty / Result",
+        "arco": "Empty",
+        "element": "el-empty"
+      },
+      "note": "★ A1 有硬性断言：必须出现「没有符合条件的数据」，不许留白表格。"
+    },
+    "steps": {
+      "zh": "步骤条",
+      "aliases": [
+        "步骤",
+        "流程指示"
+      ],
+      "slot": "body",
+      "archetypes": [
+        "A2"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Steps",
+        "arco": "Steps",
+        "element": "el-steps"
+      },
+      "note": "多步单据流程用；A5 的流程改用 timeline 表达。"
+    },
+    "anchor": {
+      "zh": "锚点",
+      "aliases": [
+        "锚点导航"
+      ],
+      "slot": "aside",
+      "archetypes": [],
+      "capabilities": [
+        "scroll-spy"
+      ],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Anchor",
+        "arco": "Anchor",
+        "element": "el-anchor"
+      },
+      "note": "长表单 / 长详情页内的位置跳转。scroll-spy 需多张截图才能判定，单图标 unsupported。"
+    },
+    "dropdown": {
+      "zh": "下拉菜单",
+      "aliases": [
+        "更多操作"
+      ],
+      "slot": "overlay",
+      "archetypes": [
+        "A1",
+        "A6"
+      ],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Dropdown",
+        "arco": "Dropdown",
+        "element": "el-dropdown"
+      },
+      "note": "行内操作超过 3 个时收进「更多」。"
+    },
+    "page-footer": {
+      "zh": "页脚",
+      "aliases": [
+        "页脚"
+      ],
+      "slot": "footer",
+      "archetypes": [],
+      "capabilities": [],
+      "defaults": [],
+      "targets": {
+        "self": "自绘",
+        "antd": "Layout.Footer",
+        "arco": "Layout.Footer",
+        "element": "el-footer"
+      },
+      "note": "ERP 后台通常不需要，登记以保证术语层完整。"
+    }
+  },
+  "switchTriggers": {
+    "note": "★ 什么信号出现时必须认真考虑换渲染目标（而不是继续自绘）。与 docs/component-library-strategy.md 第 4 节一致。这是「什么时候做第 ③ 层」的判定依据，不是实现清单。",
+    "capabilitySignals": {
+      "resizable": "列宽拖拽 + 列配置持久化 —— 自绘要自己维护列状态并落存储",
+      "fixed-column": "左右冻结列 —— 与横向滚动叠加时自绘的对齐成本陡增",
+      "virtual-scroll": "> 1000 行虚拟滚动 —— 自绘需要自己实现可视区裁剪",
+      "inline-edit": "行内编辑 + 单元格级校验 —— 自绘要与表单校验体系打通",
+      "tree-data": "树形数据 / 合并单元格 —— 表体结构不再是平铺行",
+      "summary-row": "复杂汇总口径（分组小计）—— 简单合计自绘够用"
+    },
+    "rule": "上表命中 ≥3 项 → 自绘不划算，进入渲染目标评估。",
+    "i18nHardRequirements": [
+      "多语言 + RTL（阿拉伯语等从右到左排版）",
+      "时区 / 日期格式 / 千分位 / 货币符号",
+      "组件级 locale：分页「共 N 条」、日期选择器的月份名与星期"
+    ],
+    "i18nNote": "Public component library mapping; implementation pending."
+  }
+}

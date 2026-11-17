@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>销售订单管理 · 示例 ERP</title>
+<!-- 依赖规范版本：skill 1.2.0（pageSpec 1.0 / archetypes 1.0 / recipes 1.0 / tokens 1.0）· ERP Page Forge -->
+<!--
+  原型：A1 管理列表页
+  由 ERP Page Forge (erp-page-forge) 生成 · 零依赖单文件 · 数据全部为虚构演示数据
+-->
+<style>
+:root{
+ --brand:#2b5cff;--brand-weak:#eef3ff;--brand-strong:#1c46d6;
+ --ok:#12a150;--ok-weak:#e7f6ee;--warn:#e08b00;--warn-weak:#fdf3e2;
+ --danger:#e5484d;--danger-weak:#fdecec;--purple:#7c5cff;--purple-weak:#f0edff;
+ --bg:#f4f6fa;--surface:#fff;--line:#e6e9f0;--line-strong:#d5d9e3;
+ --text:#1c2230;--text-2:#5a6478;--text-3:#8b93a5;
+ --side-bg:#111827;--side-hover:#1b2437;--side-on:#22304d;--side-text:#a7b0c4;
+ --sh:0 1px 2px rgba(16,24,40,.05);--sh2:0 24px 48px rgba(16,24,40,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+/* 金额/数量/日期列一律不折行，否则窄列会把 2026-09-17 折成两行 */
+td.num{white-space:nowrap}
+.app{display:flex;min-height:100vh}
+.side{width:216px;flex:0 0 216px;background:var(--side-bg);color:var(--side-text);position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+.brand{display:flex;align-items:center;gap:10px;padding:16px;color:#fff;font-weight:600;font-size:14.5px;border-bottom:1px solid #1b2437}
+.logo{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#5b86ff,#2b5cff);display:grid;place-items:center;font-size:11px;letter-spacing:.5px}
+.nav{flex:1;overflow:auto;padding:8px 10px 16px}
+.nav-title{padding:12px 8px 6px;font-size:11px;letter-spacing:1px;color:#5d6b85}
+.nav a{display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;margin-bottom:2px;border-radius:8px;font-size:13.5px;color:var(--side-text);text-decoration:none}
+.nav a:hover{background:var(--side-hover);color:#fff}
+.nav a.on{background:var(--side-on);color:#fff;box-shadow:inset 2px 0 0 var(--brand)}
+.ico{width:16px;height:16px;border-radius:5px;background:#2c3852;flex:0 0 16px}
+.nav a.on .ico{background:var(--brand)}
+.me{padding:12px 14px;border-top:1px solid #1b2437;display:flex;gap:10px;align-items:center;font-size:12.5px;color:#8d97ab}
+.avatar{width:28px;height:28px;border-radius:8px;background:#2c3852;display:grid;place-items:center;color:#cbd5e6;font-size:12px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.top{height:56px;flex:0 0 56px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:20}
+.crumb{font-size:13px;color:var(--text-3)}
+.crumb b{color:var(--text)}
+.content{padding:16px 20px 28px;display:flex;flex-direction:column;gap:16px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.h1{font-size:20px;font-weight:600;margin:0 0 5px}
+.sub{font-size:12.5px;color:var(--text-3)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--sh)}
+.btn{height:34px;padding:0 14px;border-radius:6px;border:1px solid var(--line-strong);background:#fff;color:var(--text);font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:.15s}
+.btn:hover{border-color:#b9c0d0;background:#fafbfe}
+.btn-p{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn-p:hover{background:var(--brand-strong);border-color:var(--brand-strong)}
+.btn-sm{height:28px;padding:0 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed;background:#fff;border-color:var(--line-strong)}
+.btn-l{border:none;background:none;color:var(--brand);padding:0 5px;height:26px;font-size:13px;cursor:pointer;border-radius:4px}
+.btn-l:hover{background:var(--brand-weak)}
+.btn-l.dg{color:var(--danger)} .btn-l.dg:hover{background:var(--danger-weak)}
+.acts{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.filters{padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.f label{display:block;font-size:12px;color:var(--text-2);margin-bottom:6px}
+.f input,.f select{width:100%;height:34px;padding:0 10px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-size:13.5px;color:var(--text);outline:none}
+.f input:focus,.f select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(43,92,255,.12)}
+.f-a{display:flex;align-items:flex-end;gap:8px}
+.tools{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.sel{font-size:13px;color:var(--text-2)} .sel b{color:var(--brand)}
+.tools-r{display:flex;align-items:center;gap:8px}
+.tbl-wrap{overflow:auto}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+th{background:#fafbfd;color:var(--text-2);font-weight:500;font-size:12.5px;text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;z-index:2}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--brand)}
+.ar{color:var(--line-strong);font-size:10px;margin-left:3px}
+.ar.act{color:var(--brand)}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:hover{background:#fafbff}
+tbody tr.sel{background:var(--brand-weak)}
+tfoot td{background:#fafbfd;font-weight:600;border-top:1px solid var(--line);border-bottom:none}
+.r{text-align:right} .c{text-align:center}
+.code{color:var(--brand);font-weight:500;cursor:pointer}
+.code:hover{text-decoration:underline}
+.muted{font-size:12px;color:var(--text-3);margin-top:3px}
+.tag{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;border:1px solid transparent;white-space:nowrap}
+.tag i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.t-ok{color:var(--ok);background:var(--ok-weak);border-color:#c9ebd9}
+.t-warn{color:var(--warn);background:var(--warn-weak);border-color:#f6e0b8}
+.t-dg{color:var(--danger);background:var(--danger-weak);border-color:#f8cdce}
+.t-br{color:var(--brand);background:var(--brand-weak);border-color:#cfdcff}
+.t-pu{color:var(--purple);background:var(--purple-weak);border-color:#ddd6ff}
+.t-nm{color:var(--text-2);background:#f1f3f7;border-color:#e4e7ee}
+.chk{width:15px;height:15px;accent-color:var(--brand);cursor:pointer;vertical-align:middle}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;font-size:13px;color:var(--text-2);flex-wrap:wrap}
+.pages{display:flex;gap:4px;align-items:center}
+.pg{min-width:30px;height:30px;padding:0 8px;border-radius:6px;border:1px solid var(--line-strong);background:#fff;cursor:pointer;font-size:13px;color:var(--text-2)}
+.pg:hover:not(:disabled){border-color:var(--brand);color:var(--brand)}
+.pg.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.pg:disabled{opacity:.45;cursor:not-allowed}
+.empty{padding:56px 20px;text-align:center;color:var(--text-3)}
+.empty .box{width:56px;height:56px;border-radius:14px;background:#f1f3f7;margin:0 auto 12px;display:grid;place-items:center;font-size:20px;color:#b6bdcc}
+.mask{position:fixed;inset:0;background:rgba(16,24,40,.45);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+.mask.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:620px;max-width:94vw;background:#fff;box-shadow:var(--sh2);transform:translateX(100%);transition:.24s cubic-bezier(.4,0,.2,1);z-index:50;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.dr-h{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.dr-b{padding:18px 20px;overflow:auto;flex:1}
+.dr-f{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.x{width:30px;height:30px;border-radius:6px;border:none;background:#f1f3f7;cursor:pointer;color:var(--text-2);font-size:15px}
+.x:hover{background:#e6e9f0}
+.kv{display:grid;grid-template-columns:100px 1fr 100px 1fr;gap:12px 14px;font-size:13.5px;margin:0}
+.kv dt{color:var(--text-3);font-size:13px}
+.kv dd{margin:0}
+.sec-t{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--text-3);margin:20px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.mini{width:100%;border-collapse:collapse;font-size:12.5px}
+.mini th{position:static;padding:8px 10px;font-size:12px}
+.mini td{padding:8px 10px}
+.toast{position:fixed;left:50%;top:22px;transform:translate(-50%,-140%);background:#1c2230;color:#fff;padding:10px 18px;border-radius:8px;font-size:13.5px;z-index:99;transition:.24s;box-shadow:var(--sh2)}
+.toast.on{transform:translate(-50%,0)}
+.foot{font-size:12px;color:var(--text-3);text-align:center}
+@media (max-width:1100px){.side{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo">示例</span> 示例 ERP</div>
+    <nav class="nav">
+      <div class="nav-title">工作台</div>
+      <a href="#"><span class="ico"></span>我的工作台</a>
+      <div class="nav-title">业务管理</div>
+      <a href="#"><span class="ico"></span>采购管理</a>
+      <a href="#" class="on"><span class="ico"></span>销售管理</a>
+      <a href="#"><span class="ico"></span>库存管理</a>
+      <a href="#"><span class="ico"></span>生产管理</a>
+      <div class="nav-title">财务与基础</div>
+      <a href="#"><span class="ico"></span>应收应付</a>
+      <a href="#"><span class="ico"></span>基础数据</a>
+      <a href="#"><span class="ico"></span>系统设置</a>
+    </nav>
+    <div class="me"><span class="avatar">张</span><div>张明<div>销售运营 · 销售部</div></div></div>
+  </aside>
+
+  <div class="main">
+    <header class="top">
+      <div class="crumb">销售管理 / 订单管理 / <b>销售订单</b></div>
+      <div class="me" style="border:0;padding:0;color:var(--text-3)"><span class="avatar" style="background:#eef3ff;color:var(--brand)">张</span>张明</div>
+    </header>
+
+    <main class="content">
+      <div class="head">
+        <div>
+          <h1 class="h1">销售订单管理</h1>
+          <div class="sub">共 <b id="totalAll">14</b> 条订单 · 数据截止 2026-09-17 09:30 · 金额口径为含税金额</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="toast('已生成导出任务，可在「导出中心」下载')">导出</button>
+          <button class="btn btn-p" onclick="toast('打开新建订单表单（A2 原型页）')">+ 新建订单</button>
+        </div>
+      </div>
+
+      <section class="card">
+        <div class="filters">
+          <div class="f"><label>订单号 / 客户名称</label><input id="q" placeholder="输入关键词搜索" oninput="apply()"></div>
+          <div class="f"><label>订单状态</label>
+            <select id="fStatus" onchange="apply()">
+              <option value="">全部状态</option>
+              <option>草稿</option><option>待审核</option><option>已确认</option><option>生产中</option>
+              <option>部分发货</option><option>已发货</option><option>已驳回</option><option>已关闭</option>
+            </select>
+          </div>
+          <div class="f"><label>订单类型</label>
+            <select id="fType" onchange="apply()"><option value="">全部类型</option><option>标准</option><option>样品</option><option>返修</option></select>
+          </div>
+          <div class="f"><label>业务员</label>
+            <select id="fOwner" onchange="apply()"><option value="">全部业务员</option><option>张明</option><option>李静</option><option>王磊</option><option>陈曦</option><option>赵敏</option><option>周昊</option></select>
+          </div>
+          <div class="f"><label>订单日期（起）</label><input type="date" id="fFrom" onchange="apply()"></div>
+          <div class="f"><label>订单日期（止）</label><input type="date" id="fTo" onchange="apply()"></div>
+          <div class="f-a">
+            <button class="btn btn-p" onclick="apply()">查询</button>
+            <button class="btn" onclick="reset()">重置</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="tools">
+          <div class="sel">已选 <b id="selCount">0</b> 项<span id="selHint" class="muted" style="display:inline;margin-left:8px">勾选后可批量操作</span></div>
+          <div class="tools-r">
+            <button class="btn btn-sm" id="bApprove" disabled onclick="batch('审核')">批量审核</button>
+            <button class="btn btn-sm" id="bExport" disabled onclick="batch('导出')">批量导出</button>
+            <span class="muted">共 <b id="filteredCount">14</b> 条结果</span>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="c" style="width:40px"><input type="checkbox" class="chk" id="all" onclick="toggleAll(this)"></th>
+                <th class="sortable" onclick="sortBy('code')">订单号 / 客户<span class="ar" id="ar-code">▲▼</span></th>
+                <th>订单类型</th>
+                <th class="sortable r" onclick="sortBy('amount')">订单金额<span class="ar" id="ar-amount">▲▼</span></th>
+                <th class="c">订单状态</th>
+                <th class="c">发货状态</th>
+                <th>业务员</th>
+                <th class="sortable c" onclick="sortBy('date')">订单日期<span class="ar" id="ar-date">▲▼</span></th>
+                <th class="sortable c" onclick="sortBy('due')">约定交期<span class="ar" id="ar-due">▲▼</span></th>
+                <th class="c" style="width:190px">操作</th>
+              </tr>
+            </thead>
+            <tbody id="tb"></tbody>
+            <tfoot>
+              <tr><td colspan="3">当前筛选结果合计（<span id="sumCount">14</span> 条）</td><td class="r num" id="sumAmt">¥0.00</td><td colspan="6"></td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="pager">
+          <div>第 <b id="pFrom">1</b>-<b id="pTo">14</b> 条 / 共 <b id="pTotal">14</b> 条</div>
+          <div class="pages">
+            <span style="color:var(--text-3);margin-right:6px">每页</span>
+            <select id="size" class="pg" style="padding:0 4px" onchange="page=1;render()"><option>10</option><option>20</option><option>50</option></select>
+            <button class="pg" id="prev" onclick="go(page-1)">上一页</button>
+            <span id="pgList" style="display:flex;gap:4px"></span>
+            <button class="pg" id="next" onclick="go(page+1)">下一页</button>
+          </div>
+        </div>
+      </section>
+      <div class="foot">本页数据为演示用虚构数据，非真实业务数据 · 由 ERP Page Forge 生成（原型 A1 管理列表页）</div>
+    </main>
+  </div>
+</div>
+
+<div class="mask" id="mask" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="dr-h">
+    <div><div style="font-size:15px;font-weight:600" id="drTitle">订单详情</div><div class="muted" id="drSub"></div></div>
+    <button class="x" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="dr-b" id="drBody"></div>
+  <div class="dr-f">
+    <button class="btn" onclick="closeDrawer()">关闭</button>
+    <button class="btn btn-p" onclick="toast('已提交（演示：真实环境将调用审批流接口）')">提交审批</button>
+  </div>
+</aside>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------- 数据层：换成接口返回值即可上线 ---------------- */
+const CUST=['华东精密制造有限公司（示例）','苏州联动电子（示例）','宁波恒益装备（示例）','无锡双鹿机械（示例）','常州新亚精工（示例）','昆山维信电子（示例）','杭州科锐自动化（示例）','上海浦东智造（示例）','南京捷力传动（示例）','合肥中科精密（示例）','天津北方重工（示例）','青岛海通机械（示例）','广州南方电子（示例）','成都蓉发科技（示例）'];
+const OWN=['张明','李静','王磊','陈曦','赵敏','周昊'];
+const TYPE=['标准','标准','标准','标准','标准','样品','标准','标准','标准','样品','标准','标准','标准','标准'];
+const ST=['待审核','已确认','草稿','生产中','已确认','已驳回','部分发货','已发货','已发货','已关闭','生产中','待审核','已确认','已发货'];
+const SHIP=['未发货','未发货','未发货','部分发货','未发货','未发货','部分发货','已发货','已发货','未发货','未发货','未发货','未发货','已发货'];
+const CODE=['SO-20260917-0081','SO-20260916-0079','SO-20260916-0078','SO-20260915-0076','SO-20260914-0074','SO-20260913-0071','SO-20260912-0069','SO-20260911-0066','SO-20260910-0063','SO-20260909-0060','SO-20260908-0057','SO-20260907-0055','SO-20260905-0051','SO-20260903-0048'];
+const AMT=[286400,128600,12800,942000,456720,8400,1286000,634500,218900,6200,764300,152400,89600,1024800];
+const DATE=['2026-09-17','2026-09-16','2026-09-16','2026-09-15','2026-09-14','2026-09-13','2026-09-12','2026-09-11','2026-09-10','2026-09-09','2026-09-08','2026-09-07','2026-09-05','2026-09-03'];
+const DUE=['2026-09-30','2026-09-28','2026-10-08','2026-10-15','2026-10-12','2026-09-25','2026-10-05','2026-09-26','2026-09-24','2026-09-20','2026-10-18','2026-09-29','2026-10-02','2026-09-22'];
+const MATERIAL=[['交流伺服电机 ASD-B2 750W','台'],['精密减速机 RV-40E','台'],['铝合金型材 6063-T5','kg'],['工业控制板 PCBA-02','件'],['气动执行器 AT-88','台'],['直线导轨 HGR25','套']];
+
+const ROWS=CODE.map((code,i)=>({
+  code, customer:CUST[i], type:TYPE[i], owner:OWN[i%OWN.length], amount:AMT[i],
+  status:ST[i], ship:SHIP[i], date:DATE[i], due:DUE[i],
+  /* 明细行金额由订单金额按 60%/40% 拆分，保证「合计 = 明细之和」自洽 */
+  lines:[
+    {no:1,mat:MATERIAL[i%6][0],unit:MATERIAL[i%6][1],qty:40,price:+(AMT[i]*0.6/40).toFixed(2),amt:+(AMT[i]*0.6).toFixed(2),need:DUE[i]},
+    {no:2,mat:MATERIAL[(i+2)%6][0],unit:MATERIAL[(i+2)%6][1],qty:16,price:+(AMT[i]*0.4/16).toFixed(2),amt:+(AMT[i]*0.4).toFixed(2),need:DUE[i]}
+  ],
+  pay:i%3===0?'月结30天':(i%3===1?'货到付款':'预付30%'),
+  addr:['江苏省苏州市工业园区星湖街 000 号','浙江省宁波市北仑区长江路 000 号','上海市浦东新区川沙路 000 号'][i%3],
+  contact:'138****621'+i%10
+}));
+
+/* ---------------- 状态标签与动作规则：按钮可见性跟着状态走 ---------------- */
+const TAGMAP={'草稿':'t-nm','待审核':'t-warn','已确认':'t-br','生产中':'t-pu','部分发货':'t-pu','已发货':'t-ok','已驳回':'t-dg','已关闭':'t-nm'};
+const ACTIONS={
+ '草稿':[['提交','next'],['编辑','todo'],['删除','del']],
+ '待审核':[['审核通过','next'],['驳回','reject'],['详情','detail']],
+ '已确认':[['转生产','todo'],['变更','todo'],['详情','detail']],
+ '生产中':[['登记发货','next'],['详情','detail']],
+ '部分发货':[['登记发货','next'],['详情','detail']],
+ '已发货':[['开票','todo'],['生成对账单','todo'],['详情','detail']],
+ '已驳回':[['编辑','todo'],['删除','del']],
+ '已关闭':[['详情','detail']]
+};
+const NEXT={'草稿':'待审核','待审核':'已确认','生产中':'部分发货','部分发货':'已发货'};
+
+/* ---------------- 状态 ---------------- */
+let page=1,size=10,sortKey='date',sortDir='desc',selected=new Set(),detailCode=null;
+const money=n=>'¥'+Number(n).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+/* ---------------- 筛选 / 排序 ---------------- */
+function filtered(){
+  const q=(document.getElementById('q').value||'').trim().toLowerCase();
+  const s=document.getElementById('fStatus').value, t=document.getElementById('fType').value;
+  const o=document.getElementById('fOwner').value, f=document.getElementById('fFrom').value, to=document.getElementById('fTo').value;
+  let arr=ROWS.filter(r=>{
+    if(q && !(r.code.toLowerCase().includes(q)||r.customer.includes(q))) return false;
+    if(s&&r.status!==s) return false;
+    if(t&&r.type!==t) return false;
+    if(o&&r.owner!==o) return false;
+    if(f&&r.date<f) return false;
+    if(to&&r.date>to) return false;
+    return true;
+  });
+  const dir=sortDir==='asc'?1:-1;
+  arr.sort((a,b)=>{
+    const x=a[sortKey],y=b[sortKey];
+    if(sortKey==='amount') return (x-y)*dir;
+    return String(x).localeCompare(String(y))*dir;
+  });
+  return arr;
+}
+function apply(){page=1;render();}
+
+/* ---------------- 渲染 ---------------- */
+function render(){
+  const all=filtered();
+  size=+document.getElementById('size').value;
+  const maxP=Math.max(1,Math.ceil(all.length/size));
+  if(page>maxP) page=maxP;
+  const rows=all.slice((page-1)*size,page*size);
+  const tb=document.getElementById('tb');
+
+  if(!all.length){
+    tb.innerHTML='<tr><td colspan="10"><div class="empty"><div class="box">∅</div>没有符合条件的数据<br><button class="btn btn-sm" style="margin-top:12px" onclick="reset()">清空筛选条件</button></div></td></tr>';
+  } else {
+    tb.innerHTML=rows.map(r=>{
+      const acts=ACTIONS[r.status]||[['详情','detail']];
+      return `<tr class="${selected.has(r.code)?'sel':''}">
+        <td class="c"><input type="checkbox" class="chk" ${selected.has(r.code)?'checked':''} onclick="pick('${r.code}',this)"></td>
+        <td><span class="code" onclick="openDetail('${r.code}')">${r.code}</span><div class="muted">${r.customer}</div></td>
+        <td>${r.type}</td>
+        <td class="r num">${money(r.amount)}</td>
+        <td class="c"><span class="tag ${TAGMAP[r.status]}"><i></i>${r.status}</span></td>
+        <td class="c">${r.ship==='已发货'?'<span class="tag t-ok"><i></i>已发货</span>':(r.ship==='部分发货'?'<span class="tag t-warn"><i></i>部分发货</span>':'<span style="color:var(--text-3)">未发货</span>')}</td>
+        <td>${r.owner}</td>
+        <td class="c num">${r.date}</td>
+        <td class="c num">${r.due}</td>
+        <td class="c"><div class="acts">${acts.map(a=>`<button class="btn-l ${a[1]==='del'||a[1]==='reject'?'dg':''}" onclick="rowAct('${r.code}','${a[1]}','${a[0]}')">${a[0]}</button>`).join('')}</div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  const sum=all.reduce((s,r)=>s+r.amount,0);
+  document.getElementById('sumAmt').textContent=money(sum);
+  document.getElementById('sumCount').textContent=all.length;
+  document.getElementById('filteredCount').textContent=all.length;
+  document.getElementById('pTotal').textContent=all.length;
+  document.getElementById('pFrom').textContent=all.length?(page-1)*size+1:0;
+  document.getElementById('pTo').textContent=Math.min(page*size,all.length);
+  document.getElementById('prev').disabled=page<=1;
+  document.getElementById('next').disabled=page>=maxP;
+
+  let ph='';
+  for(let i=1;i<=maxP;i++){
+    if(maxP>7 && i>2 && i<maxP-1 && Math.abs(i-page)>1){ if(ph.slice(-9)!=='<span>…<') ph+='<span style="color:var(--text-3);padding:0 2px">…</span>'; continue; }
+    ph+=`<button class="pg ${i===page?'on':''}" onclick="go(${i})">${i}</button>`;
+  }
+  document.getElementById('pgList').innerHTML=ph;
+
+  ['code','amount','date','due'].forEach(k=>{
+    const el=document.getElementById('ar-'+k);
+    if(!el) return;
+    el.textContent = sortKey===k ? (sortDir==='asc'?'▲':'▼') : '▲▼';
+    el.className='ar'+(sortKey===k?' act':'');
+  });
+  document.getElementById('all').checked = rows.length>0 && rows.every(r=>selected.has(r.code));
+  document.getElementById('all').indeterminate = !document.getElementById('all').checked && rows.some(r=>selected.has(r.code));
+  updateSel();
+}
+function go(p){const all=filtered();const m=Math.max(1,Math.ceil(all.length/+document.getElementById('size').value));if(p<1||p>m)return;page=p;render();document.querySelector('.tbl-wrap').scrollTop=0;}
+function sortBy(k){ if(sortKey===k) sortDir=sortDir==='asc'?'desc':'asc'; else {sortKey=k;sortDir='asc';} render(); }
+
+/* ---------------- 选择 / 批量 ---------------- */
+function pick(code,el){ el.checked?selected.add(code):selected.delete(code); render(); }
+function toggleAll(el){ const all=filtered(); const maxP=Math.ceil(all.length/size); const rows=all.slice((page-1)*size,page*size);
+  rows.forEach(r=> el.checked?selected.add(r.code):selected.delete(r.code)); render(); }
+function updateSel(){
+  const n=selected.size;
+  document.getElementById('selCount').textContent=n;
+  document.getElementById('bApprove').disabled=!n;
+  document.getElementById('bExport').disabled=!n;
+  const h=document.getElementById('selHint');
+  if(n){ const draft=[...selected].filter(c=>(ROWS.find(r=>r.code===c)||{}).status==='草稿').length;
+    h.textContent = draft? `其中 ${draft} 条为草稿状态，可批量审核` : '所选单据当前状态不支持批量审核';
+  } else { h.textContent='勾选后可批量操作'; }
+}
+function batch(kind){
+  const items=[...selected].map(c=>ROWS.find(r=>r.code===c));
+  if(kind==='审核'){
+    let n=0; items.forEach(r=>{ if(r.status==='草稿'){ r.status='待审核'; n++; } });
+    selected.clear(); render();
+    toast(n? `已提交 ${n} 条订单进入审批流` : '所选订单中没有草稿状态单据，未执行审核');
+  } else {
+    toast(`已导出 ${items.length} 条订单（演示：接口未接入）`); selected.clear(); render();
+  }
+}
+
+/* ---------------- 行内动作：状态真的会变 ---------------- */
+function rowAct(code,kind,label){
+  const r=ROWS.find(x=>x.code===code);
+  if(kind==='detail') return openDetail(code);
+  if(kind==='del'){ if(confirm(`确认删除订单 ${code}？删除后不可恢复。`)){ ROWS.splice(ROWS.indexOf(r),1); selected.delete(code); render(); toast('订单已删除（草稿单可删除）'); } return; }
+  if(kind==='reject'){ const why=prompt('请输入驳回原因（必填）：','客户信用额度不足，请补充预付款'); if(why){ r.status='已驳回'; render(); toast('已驳回：'+why); } return; }
+  if(kind==='todo') return toast(`「${label}」功能为演示占位，真实环境将跳转对应单据流程`);
+  const nx=NEXT[r.status];
+  if(nx){ r.status=nx; if(nx==='已发货') r.ship='已发货'; if(nx==='部分发货') r.ship='部分发货';
+    render(); toast(`${code} 状态已更新：${r.status}`); if(detailCode===code) openDetail(code); }
+}
+
+/* ---------------- 详情抽屉：A3 精简版 ---------------- */
+function openDetail(code){
+  const r=ROWS.find(x=>x.code===code); if(!r) return;
+  detailCode=code;
+  document.getElementById('drTitle').textContent='销售订单 '+r.code;
+  document.getElementById('drSub').innerHTML=`<span class="tag ${TAGMAP[r.status]}"><i></i>${r.status}</span> · 提交人 ${r.owner} · ${r.date}`;
+  const sum=r.lines.reduce((s,l)=>s+l.amt,0);
+  document.getElementById('drBody').innerHTML=`
+    <div class="sec-t">基础信息</div>
+    <dl class="kv">
+      <dt>客户名称</dt><dd>${r.customer}</dd><dt>订单类型</dt><dd>${r.type}</dd>
+      <dt>业务员</dt><dd>${r.owner}</dd><dt>结算方式</dt><dd>${r.pay}</dd>
+      <dt>订单日期</dt><dd class="num">${r.date}</dd><dt>约定交期</dt><dd class="num">${r.due}</dd>
+      <dt>发货状态</dt><dd>${r.ship}</dd><dt>联系电话</dt><dd class="num">${r.contact}</dd>
+      <dt>收货地址</dt><dd style="grid-column:span 3">${r.addr}</dd>
+    </dl>
+    <div class="sec-t">明细信息（${r.lines.length} 行）</div>
+    <table class="mini">
+      <thead><tr><th>行号</th><th>物料名称</th><th class="r">数量</th><th class="c">单位</th><th class="r">单价</th><th class="r">金额</th><th class="c">需求日期</th></tr></thead>
+      <tbody>${r.lines.map(l=>`<tr><td>${l.no}</td><td>${l.mat}</td><td class="r num">${l.qty}</td><td class="c">${l.unit}</td><td class="r num">${money(l.price)}</td><td class="r num">${money(l.amt)}</td><td class="c num">${l.need}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="5" class="r">金额合计</td><td class="r num">${money(sum)}</td><td></td></tr></tfoot>
+    </table>
+    <div class="sec-t">流转记录</div>
+    <div style="font-size:13px;color:var(--text-2);line-height:2">
+      ① ${r.date} 09:12　${r.owner} 创建订单<br>
+      ② ${r.date} 10:05　销售主管 王磊 确认客户与价格<br>
+      ③ 当前状态：<span class="tag ${TAGMAP[r.status]}"><i></i>${r.status}</span>
+    </div>`;
+  document.getElementById('mask').classList.add('on');
+  document.getElementById('drawer').classList.add('on');
+}
+function closeDrawer(){ detailCode=null; document.getElementById('mask').classList.remove('on'); document.getElementById('drawer').classList.remove('on'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeDrawer(); });
+function reset(){ ['q','fStatus','fType','fOwner','fFrom','fTo'].forEach(id=>document.getElementById(id).value=''); selected.clear(); apply(); toast('筛选条件已重置'); }
+let tid; function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(tid); tid=setTimeout(()=>t.classList.remove('on'),2200); }
+render();
+</script>
+</body>
+</html>

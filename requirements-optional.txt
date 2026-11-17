@@ -1,0 +1,4 @@
+# Core deterministic generation uses the Python standard library.
+# Optional image analysis/cropping and browser capture:
+Pillow>=10
+playwright>=1.40

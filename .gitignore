@@ -1,0 +1,14 @@
+node_modules/
+.pnpm-store/
+__pycache__/
+*.pyc
+*.log
+.env*
+!.env.example
+plugin/lib/
+plugin/engine/
+plugin/release/
+build/studio-out/
+.build-check/
+.local-checks/
+*.tgz

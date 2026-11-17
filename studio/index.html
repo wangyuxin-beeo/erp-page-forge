@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forge Studio · 设计到代码</title>
+<style>
+:root{--brand:#5B5BD6;--brand-soft:#EFEFFC;--bg:#F6F6FA;--card:#fff;--line:#E7E7EF;--t1:#16161F;--t2:#5B5B72;--t3:#9A9AB0;--ok:#17A673;--dg:#E2445C;--r:12px;
+--sh:0 1px 2px rgba(22,22,40,.04),0 10px 28px -14px rgba(22,22,40,.16)}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font:13px/1.5 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:var(--t1);background:var(--bg);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+.app{display:grid;grid-template-rows:56px minmax(0,1fr);height:100vh}
+header{display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--card);border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:9px;font-weight:650;font-size:15px;white-space:nowrap}
+.logo i{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--brand),#8B5CF6)}
+.steps{display:flex;gap:4px;margin-left:18px}
+.steps b{padding:5px 12px;border-radius:999px;color:var(--t3);font-weight:500;white-space:nowrap}
+.steps b.on{background:var(--brand-soft);color:var(--brand)}
+.sp{flex:1}
+.btn{height:32px;padding:0 13px;border:1px solid var(--line);border-radius:9px;background:var(--card);cursor:pointer;white-space:nowrap;transition:box-shadow .15s,border-color .15s}
+.btn:hover{border-color:#cfcfe0;box-shadow:0 0 0 3px var(--brand-soft)}
+.btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.btn.p{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 6px 14px -6px rgba(91,91,214,.7)}
+.btn.sm{height:26px;padding:0 9px;font-size:12px;border-radius:7px}
+.main{display:grid;grid-template-columns:56px 248px minmax(0,1fr) 320px;min-height:0}
+.tools{display:flex;flex-direction:column;gap:6px;padding:12px 8px;background:var(--card);border-right:1px solid var(--line)}
+.tool{width:40px;height:40px;border:0;border-radius:10px;background:transparent;cursor:pointer;font-size:16px;color:var(--t2)}
+.tool:hover{background:var(--bg)}.tool.on{background:var(--brand-soft);color:var(--brand)}
+.pane{background:var(--card);border-right:1px solid var(--line);overflow:auto;min-width:0}
+.pane.r{border-right:0;border-left:1px solid var(--line)}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;font-weight:600}
+.ph small{color:var(--t3);font-weight:400}
+.sec{padding:4px 16px 16px;border-bottom:1px solid var(--line)}
+.layer{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;cursor:pointer;white-space:nowrap;overflow:hidden}
+.layer:hover{background:var(--bg)}.layer.on{background:var(--brand-soft);color:var(--brand)}
+.layer .k{font-size:11px;padding:0 6px;border-radius:6px;background:var(--bg);color:var(--t2)}
+.layer .sz{margin-left:auto;color:var(--t3);font-size:11px;font-variant-numeric:tabular-nums}
+.stage{position:relative;overflow:auto;min-width:0;background:radial-gradient(circle,#dcdce6 1px,transparent 1px) 0 0/18px 18px}
+.board{position:relative;margin:28px auto;box-shadow:var(--sh);border-radius:6px;background:#fff;width:max-content}
+.board canvas{display:block;border-radius:6px}
+#ov{position:absolute;inset:0}
+.box{position:absolute;border:1px dashed rgba(91,91,214,.5);pointer-events:none}
+.box.on{border:2px solid var(--brand);background:rgba(91,91,214,.08)}
+.box.hv{border-color:var(--brand)}
+.box .lb{position:absolute;top:-19px;left:-2px;padding:0 6px;border-radius:5px 5px 5px 0;background:var(--brand);color:#fff;font-size:11px;white-space:nowrap}
+.hl{position:absolute;border:2px solid #DC2626;background:rgba(220,38,38,.10);pointer-events:none;z-index:5}
+.hl .lb{position:absolute;top:-19px;left:-2px;padding:0 6px;border-radius:5px 5px 5px 0;background:#DC2626;color:#fff;font-size:11px;white-space:nowrap}
+.lowconf{margin-top:8px;font-size:12px;line-height:1.7;color:var(--t2)}
+.lowconf b{color:#DC2626;font-weight:600}
+.lowconf .lc{display:flex;gap:6px;align-items:baseline;padding:2px 0}
+.lowconf .lc .t{color:var(--t3)}
+.lowconf .lc .r{color:var(--t3);font-style:italic}
+.rubber{position:absolute;border:1.5px solid var(--brand);background:rgba(91,91,214,.1)}
+.empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--t2)}
+.drop{padding:42px 56px;border:1.5px dashed #c9c9da;border-radius:16px;background:rgba(255,255,255,.85)}
+.drop h3{margin:0 0 6px;font-size:17px;color:var(--t1)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+label.f{display:block;margin-top:10px;color:var(--t2);font-size:12px}
+label.f input,label.f select,textarea{width:100%;margin-top:4px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:#fff;outline:none}
+label.f input:focus,textarea:focus,label.f select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+textarea{height:180px;font:12px/1.5 ui-monospace,Consolas,monospace;resize:vertical}
+.sw{width:26px;height:26px;border-radius:8px;border:1px solid rgba(0,0,0,.08);cursor:pointer}
+.sw.on{outline:2px solid var(--brand);outline-offset:2px}
+.hint{color:var(--t3);font-size:12px;margin-top:6px}
+.tabs{display:flex;gap:4px;padding:10px 16px 0}
+.tabs button{border:0;background:none;padding:6px 10px;border-radius:8px;cursor:pointer;color:var(--t2)}
+.tabs button.on{background:var(--brand-soft);color:var(--brand);font-weight:600}
+.res{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg)}
+.res.on{display:flex}
+.res iframe{flex:1;border:0;background:#fff;margin:0 16px 16px;border-radius:10px;box-shadow:var(--sh)}
+.res pre{flex:1;margin:0 16px 16px;padding:14px;overflow:auto;background:#fff;border-radius:10px;box-shadow:var(--sh);font:12px/1.55 ui-monospace,Consolas,monospace;white-space:pre}
+.log{font-size:12px}.log div{padding:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ok{color:var(--ok)}.bad{color:var(--dg)}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);padding:9px 16px;border-radius:10px;background:var(--t1);color:#fff;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.guide{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(22,22,40,.32)}
+.guide.on{display:flex}
+.guide-box{width:min(760px,calc(100vw - 40px));max-height:calc(100vh - 60px);overflow:auto;background:var(--card);border-radius:16px;box-shadow:0 24px 60px -20px rgba(22,22,40,.35)}
+.guide-h{display:flex;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line)}
+.guide-h h2{margin:0;font-size:16px;font-weight:650}
+.guide-b{padding:6px 22px 20px}
+.guide-b h3{margin:18px 0 8px;font-size:14px;display:flex;align-items:center;gap:8px}
+.guide-b h3 em{font-style:normal;display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;background:var(--brand-soft);color:var(--brand);font-size:12px}
+.guide-b p,.guide-b li{color:var(--t2);margin:4px 0}
+.guide-b ul{margin:4px 0;padding-left:20px}
+.guide-b code{padding:1px 6px;border-radius:5px;background:var(--bg);font:12px ui-monospace,Consolas,monospace;color:var(--t1)}
+.guide-b pre{margin:6px 0;padding:10px 12px;border-radius:8px;background:var(--bg);font:12px/1.6 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-all}
+.map{width:100%;margin:6px 0 2px;border-collapse:collapse;font-size:12px}
+.map th,.map td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.map th{width:84px;white-space:nowrap;color:var(--brand);font-weight:600;background:var(--brand-soft)}
+.map td{color:var(--t2)}
+.kbd{display:inline-block;min-width:20px;padding:0 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;font:11px ui-monospace,Consolas,monospace;text-align:center;color:var(--t1);background:#fff}
+.note{margin-top:14px;padding:10px 12px;border-radius:10px;background:#FFF7E8;color:#8A5A00}
+.mini{margin-top:16px;text-align:left;font-size:12px;color:var(--t2)}
+.mini ol{margin:6px 0 0;padding-left:18px}
+.his{width:100%;margin-top:10px;border-collapse:collapse;font-size:12px}
+.his th,.his td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.his th{color:var(--t3);font-weight:500;white-space:nowrap}
+.his td a{color:var(--brand);text-decoration:none;margin-right:8px;white-space:nowrap}
+.his td a:hover{text-decoration:underline}
+.pill{display:inline-block;padding:0 8px;border-radius:999px;font-size:11px;line-height:18px}
+.pill.ok{background:#E6F6EF;color:var(--ok)}.pill.bad{background:#FDECEF;color:var(--dg)}
+.dlbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:8px 16px 0;padding:8px 10px;border-radius:10px;background:var(--card);box-shadow:var(--sh);font-size:12px}
+.dlbar a{color:var(--brand);text-decoration:none}
+.wsSel{height:32px;border:1px solid var(--line);border-radius:9px;padding:0 8px;background:var(--card);max-width:170px}
+.layer .k{border-left:3px solid transparent}
+.layer .n.ph{color:var(--t3);font-style:italic}
+.semsum{margin-top:8px;font-size:12px;color:var(--t2);line-height:1.7}
+.semsum b{color:var(--t1);font-weight:600}
+/* ---------- 模板库（统一入口） ---------- */
+.mode{display:flex;gap:2px;padding:3px;border-radius:10px;background:var(--bg);margin-left:14px}
+.mode button{border:0;background:none;height:28px;padding:0 12px;border-radius:8px;cursor:pointer;color:var(--t2);white-space:nowrap}
+body.m-lib header .steps,body.m-lib #aiState,body.m-lib #bSample,body.m-lib #bAxure,body.m-lib #upLbl,body.m-lib #bForge{display:none}
+.mode button.on{background:var(--card);color:var(--brand);font-weight:600;box-shadow:var(--sh)}
+.libv{position:fixed;top:56px;left:0;right:0;bottom:0;z-index:20;overflow:auto;background:var(--bg);display:none}
+.libv.on{display:block}
+.lib-in{max-width:1180px;margin:0 auto;padding:22px 24px 40px}
+.cmd{display:flex;gap:8px;padding:14px;background:var(--card);border-radius:14px;box-shadow:var(--sh)}
+.cmd input{flex:1;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:10px;font-size:14px}
+.cmd input:focus{outline:2px solid var(--brand-soft);border-color:var(--brand)}
+.cmd select{height:40px;border:1px solid var(--line);border-radius:10px;padding:0 8px;background:var(--card)}
+.cmd .btn{height:40px}
+.parsed{min-height:22px;margin:8px 4px 0;font-size:12px;color:var(--t2)}
+.parsed b{color:var(--t1)}.parsed .w{color:#B45309}
+.lib-h{display:flex;align-items:baseline;gap:10px;margin:26px 0 10px}
+.lib-h h2{margin:0;font-size:15px;font-weight:650}.lib-h small{color:var(--t3)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.card:hover,.card.sel{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.card .pv{height:150px;background:#fff;border-bottom:1px solid var(--line);overflow:hidden;position:relative}
+.card .pv iframe{width:1280px;height:750px;border:0;transform:scale(.2);transform-origin:0 0;pointer-events:none}
+.card .pv img{width:100%;height:100%;object-fit:cover;object-position:top left}
+.card .bd{padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px}
+.card .t{font-weight:600;display:flex;align-items:center;gap:6px}
+.card .tag{font-size:11px;padding:1px 6px;border-radius:6px;background:var(--brand-soft);color:var(--brand);font-weight:600}
+.card .tag.c{background:#ECFDF5;color:#047857}
+.card .d{font-size:12px;color:var(--t2)}
+.card .ex{font-size:12px;color:var(--t3)}
+.card .ops{display:flex;gap:6px;margin-top:6px}
+.up{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.up .box{background:var(--card);border:1px dashed #cfcfe0;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.up .box h3{margin:0;font-size:14px}.up .box p{margin:0;font-size:12px;color:var(--t2)}
+.up .box .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.busy{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(246,246,250,.7);font-size:14px;color:var(--t2)}
+.busy.on{display:flex}
+</style>
+<link rel="stylesheet" href="/studio/web-capture.css">
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="logo"><i></i>Forge Studio</div>
+  <div class="mode" role="tablist" aria-label="视图"><button id="mLib" class="on" role="tab">模板库</button><button id="mDesign" role="tab">设计台</button><button id="mWeb" role="tab" aria-controls="webv" aria-selected="false">参考网页</button></div>
+  <div class="steps"><b id="s1" class="on">① 设计图</b><b id="s2">② 拆层 · 标注</b><b id="s3">③ 生成代码</b><b id="s4">④ 验收</b></div>
+  <div class="sp"></div>
+  <span id="aiState" class="hint" style="margin:0"></span>
+  <select class="wsSel" id="wsCur" aria-label="当前工作区" title="生成产物会存到当前工作区"></select>
+  <button class="btn" id="bWs" aria-haspopup="dialog">工作区</button>
+  <button class="btn" id="bHis" aria-haspopup="dialog">产物与日志</button>
+  <button class="btn" id="bGuide" aria-haspopup="dialog">使用说明</button>
+  <button class="btn" id="bSample" hidden>载入示例</button>
+  <button class="btn" id="bAxure" aria-haspopup="dialog">导入 Axure 原型</button>
+  <label class="btn" id="upLbl" style="display:inline-flex;align-items:center">上传设计图<input id="file" type="file" accept="image/png,image/jpeg,image/webp" hidden></label>
+  <button class="btn p" id="bForge" disabled>生成页面</button>
+</header>
+<section class="libv on" id="libv" aria-label="模板库">
+ <div class="lib-in">
+  <div class="cmd">
+   <input id="cmdIn" placeholder="输入指令，例如：生成销售订单列表页 ／ 设备点检列表页 字段：设备编码、点检日期、点检结果" aria-label="生成指令">
+   <select id="cmdTheme" aria-label="主题"><option value="default">默认主题</option><option value="premium">高级感</option></select>
+   <button class="btn" id="bParse">解析</button>
+   <button class="btn p" id="bCmd">生成代码</button>
+  </div>
+  <div class="parsed" id="parsed" aria-live="polite">选一个模板卡片会自动填好示例指令；也可以直接输入。指令里写「用「模板名」生成 XX」即可复用自定义模板。</div>
+
+  <div class="lib-h"><h2>内置模板 · A1–A6</h2><small>erp-page-forge 六类 ERP 页面原型，带配方字段与验收断言</small></div>
+  <div class="grid" id="gBuiltin"></div>
+
+  <div class="lib-h"><h2>我的模板</h2><small id="customCnt">从设计图 / HTML / Axure 生成后「存入模板库」</small></div>
+  <div class="grid" id="gCustom"></div>
+
+  <div class="lib-h"><h2>新建自定义模板</h2><small>上传素材 → 生成 → 存入模板库，之后像内置模板一样用指令复用</small></div>
+  <div class="up">
+   <div class="box"><h3>设计图（PNG / JPG）</h3><p>进入设计台拆层标注，适合 Figma 导出、旧系统截图。</p>
+    <div class="row"><label class="btn sm p" style="display:inline-flex;align-items:center">选择图片<input id="libImg" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><button class="btn sm" id="libImgDemo" hidden>用示例图</button></div></div>
+   <div class="box"><h3>HTML 页面 / 文件夹</h3><p>反向工程抽出列、字段、动作，支持 .html .vue .jsx .tsx。</p>
+    <div class="row"><label class="btn sm p" style="display:inline-flex;align-items:center">选择文件<input id="libHtml" type="file" accept=".html,.htm,.vue,.jsx,.tsx,.js,.ts,.css" multiple hidden></label>
+    <label class="btn sm" style="display:inline-flex;align-items:center">选择文件夹<input id="libDir" type="file" webkitdirectory multiple hidden></label></div>
+    <input id="libRename" placeholder="可选：换成我的页面名，如 供应商档案" style="height:28px;padding:0 8px;border:1px solid var(--line);border-radius:7px;margin-top:4px"></div>
+   <div class="box"><h3>Axure 原型</h3><p>读取 Axure 发布的 HTML 原型目录（含标注、站点地图）。</p>
+    <div class="row"><button class="btn sm p" id="libAxure">导入 Axure</button></div></div>
+  </div>
+ </div>
+</section>
+<section class="webv" id="webv" aria-label="参考网页" hidden>
+ <div class="web-in">
+  <div class="web-heading"><h1>参考网页与项目原型</h1><p>读取页面、主题与原型声明的导航关系，按静态页面或当前项目框架生成代码。</p></div>
+  <form id="webForm" class="web-card">
+   <div class="web-access"><label class="f" for="webAccess">访问方式<select id="webAccess"><option value="public">公开网页</option><option value="prototype">本机 / 授权内网原型</option></select></label><p class="hint" id="webAccessHelp">公开网页模式保留原有公开地址采集规则。</p></div>
+   <label class="f" for="webUrl">参考网址（含 http:// 或 https://）</label>
+   <div class="web-url"><input id="webUrl" type="url" placeholder="https://example.com" required autocomplete="url" aria-describedby="webAdvice"><button class="btn p" id="webCapture" type="submit" disabled>采集网页</button></div>
+   <div class="web-options"><label class="f">视口宽度<input id="webWidth" type="number" value="1280" min="360" max="1920" step="1" required></label><label class="f">视口高度<input id="webHeight" type="number" value="800" min="400" max="1200" step="1" required></label><label class="f">最多采集页数<input id="webMaxPages" type="number" value="3" min="1" max="10" step="1" required></label><span class="hint">采集无需模型；AI 生成使用当前配置的模型。产物保存在采集时的工作区。</span></div>
+   <label class="web-login"><input id="webLogin" type="checkbox">手动登录后采集<span class="hint">弹出独立浏览器，在其中完成登录并点击“开始采集”；默认不启用。</span></label>
+   <label class="f web-project" for="webProjectPath">当前项目目录（可选）<input id="webProjectPath" type="text" placeholder="例如 C:\\Projects\\ERP，填写本机项目绝对目录" autocomplete="off"><span class="hint">读取项目主题和技术栈。按项目框架生成代码包时需要在采集前填写；留空可继续静态还原。</span></label>
+   <p class="hint web-scope">读取原型声明与导航关系；保存、提交、删除等业务动作待确认，不代表已执行或验证。内网原型可填 http://prototype.example/erp；本机 Axure 可填 http://127.0.0.1:32767/start.html。</p>
+   <div class="web-status hint" id="webAdvice" role="status">正在检查采集环境…</div><button class="btn sm" id="webRetryStatus" type="button" hidden>重新检查</button>
+  </form>
+  <p id="webMessage" class="web-message" role="status" aria-live="polite"></p>
+  <section id="webCaptureResult" class="web-card" hidden>
+   <div class="web-result-head"><div><h2 id="webTitle"></h2><p id="webSource" class="hint"></p></div><span id="webSummary" class="hint"></span></div>
+   <div class="row web-downloads"><a class="btn" id="webData" download>导出页面数据</a><a class="btn" id="webTheme" download>导出页面主题</a><a class="btn" id="webPrototype" download hidden>导出原型与交互数据</a><a class="btn" id="webBundle" download>下载完整包</a></div>
+   <div id="webProjectContext" class="web-context" hidden><h3>项目主题与技术栈</h3><p id="webProjectFramework"></p><ul id="webProjectFiles"></ul></div>
+   <div id="webInteractions" class="web-interactions" hidden><h3>读取到的原型交互</h3><p class="hint">以下为声明或导航关系，均需结合原型与项目验证；不会据此认定业务动作已通过。</p><div class="web-table-scroll"><table><thead><tr><th scope="col">元素 / 说明</th><th scope="col">事件</th><th scope="col">目标</th><th scope="col">状态</th></tr></thead><tbody id="webInteractionRows"></tbody></table></div><p id="webInteractionNote" class="hint"></p></div>
+   <ul id="webWarnings" class="web-warnings" hidden></ul>
+   <div class="web-shot"><img id="webScreenshot" alt="参考网页采集截图"><p id="webShotError" class="bad" hidden>截图加载失败，可从完整包中查看截图。</p></div>
+   <div class="web-restore"><label class="f" for="webGenerationMode">生成方式<select id="webGenerationMode"><option value="static">静态还原：仅 HTML / CSS</option><option value="project" id="webProjectMode" disabled>项目代码包：使用项目框架与主题</option></select></label><p id="webGenerationHelp" class="hint">生成可编辑的静态 HTML / CSS，业务交互与后端接口需另行接入。</p><label class="f" for="webHint">还原需求（可选）</label><textarea id="webHint" rows="3" maxlength="4000" placeholder="例如：按项目主题实现采购工作台，保留原型的导航与弹窗声明"></textarea><div class="row"><button class="btn p" id="webRestore" type="button">AI 还原页面</button><span class="hint">项目代码包须在项目中构建、运行并验证；未验证交互仍待确认。</span></div></div>
+  </section>
+  <section id="webRestoreResult" class="web-card" hidden><div class="web-result-head"><h2 id="webRestoreTitle">AI 还原结果</h2><div class="row"><a id="webCode" class="btn p" download hidden>下载项目代码包</a><a id="webReport" class="web-report" target="_blank" rel="noopener noreferrer">查看验收报告</a></div></div><p id="webRestoreNotice" class="hint"></p><iframe id="webRestoreFrame" title="AI 生成结果预览" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe></section>
+ </div>
+</section>
+<div class="busy" id="busy" role="status"><span id="busyT">生成中…</span></div>
+<div class="main">
+  <nav class="tools" aria-label="工具">
+    <button class="tool on" data-t="select" title="选择 / 拖动图层 (V)" aria-label="选择">↖</button>
+    <button class="tool" data-t="box" title="框选新图层 (M)" aria-label="框选">⬚</button>
+    <button class="tool" data-t="pick" title="取色 (I)" aria-label="取色">◉</button>
+    <button class="tool" data-t="split" title="对当前图层再拆分 (S)" aria-label="再拆分">✂</button>
+  </nav>
+  <aside class="pane">
+    <div class="ph">图层<small id="layerCount">0</small></div>
+    <div class="sec" style="padding-top:0">
+      <div class="row" style="margin-top:0"><button class="btn sm" id="bAuto" disabled>语义拆层</button><button class="btn sm" id="bPixel" disabled title="旧算法：只按留白切块，不识别语义">像素拆层</button><button class="btn sm" id="bClear" disabled>清空</button><button class="btn sm" id="bTidy" hidden title="从画布和图层里移除图标/碎块等装饰层">清装饰</button><button class="btn sm" id="bNoise" hidden></button></div>
+      <div class="row"><button class="btn sm" id="bNameEx" disabled title="用右侧 extract.json 的列/按钮/菜单文字按顺序命名">按 extract 命名</button><button class="btn sm" id="bBatch" disabled title="一次性给同类图层填名称">批量命名</button></div>
+      <div class="hint">上传即自动识别：侧栏/菜单/标题/查询条件/表格/列头/按钮/分页</div>
+      <div class="semsum" id="semSum"></div>
+    </div>
+    <div id="layers" style="padding:8px"></div>
+  </aside>
+  <section class="stage" id="stage">
+    <div class="empty" id="empty"><div class="drop"><h3>拖入一张 ERP 页面设计图</h3><div>Dribbble 截图、Figma 导出、旧系统截图都可以</div><div class="hint">图片只在本机处理；开启 AI 识别时才会发往你配置的模型</div>
+      <div class="mini"><b>第一次用？</b>
+        <ol><li>上传一张你有权使用的设计图</li><li>右侧主题选「高级感」</li><li>点「生成页面」，看结果和验收报告</li></ol>
+        <div class="row"><button class="btn sm p" id="bTry" hidden>上传自己的图片</button><button class="btn sm" id="bGuide2">完整使用说明</button></div>
+      </div></div></div>
+    <div class="board" id="board" hidden><canvas id="cv"></canvas><div id="ov"></div></div>
+    <div class="res" id="res">
+      <div class="tabs" id="resTabs"><button data-v="page" class="on">生成页面</button><button data-v="report">验收报告</button><button data-v="code">源码</button><button data-v="spec">PageSpec</button><span class="sp"></span><button data-v="close">← 回到画布</button></div>
+      <div class="dlbar" id="dlBar"></div>
+      <iframe id="resFrame" title="生成结果"></iframe><pre id="resPre" hidden></pre>
+    </div>
+  </section>
+  <aside class="pane r">
+    <div class="ph">图层属性</div>
+    <div class="sec" id="props"><div class="hint">选中一个图层后可标注语义、导出或移除</div></div>
+    <div class="ph">视觉令牌<small>取色写入主题</small></div>
+    <div class="sec"><div class="row" id="palette"></div><div class="hint" id="brandHint">主色：自动（来自截图测量）</div></div>
+    <div class="ph">页面结构</div>
+    <div class="sec">
+      <div class="row" style="margin-top:0"><button class="btn sm" id="bAI" disabled>AI 识别</button><button class="btn sm" id="bAICheck" disabled>自检</button><button class="btn sm" id="bFromLayers" disabled>按图层生成草稿</button></div>
+      <label class="f">主题<select id="theme"><option value="premium">高级感（仅内置模板）</option><option value="default" selected>截图入口始终按原图还原</option></select></label>
+      <label class="f">extract.json（可直接修改）<textarea id="ex" spellcheck="false" placeholder="AI 识别、按图层生成后出现在这里"></textarea></label>
+      <div class="hint" id="exHint"></div>
+      <div class="lowconf" id="lowConf" hidden></div>
+    </div>
+    <div class="ph">运行日志</div>
+    <div class="sec log" id="log"></div>
+  </aside>
+</div>
+</div>
+<div class="guide" id="guide" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+<div class="guide-box">
+  <div class="guide-h"><h2 id="guideTitle">使用说明 · 页面生成与原型还原</h2><span class="sp"></span><button class="btn sm" id="bGuideClose" aria-label="关闭说明">关闭</button></div>
+  <div class="guide-b">
+    <p>按任务选择顶部的「模板库」「设计台」或「参考网页」。采集和生成结果保存在当前工作区，可在「产物与日志」中查看和下载。</p>
+
+    <h3><em>1</em>模板库：快速生成 ERP 页面</h3>
+    <ul><li>点击模板卡片的「预览」查看样式，点击「用它生成」填入示例指令。</li>
+      <li>在输入框描述页面名称、字段和操作需求，选择主题；「解析」用于先检查指令识别结果，「生成代码」用于生成页面。</li>
+      <li>模板类型包括管理列表、单据表单、主数据详情、看板、审批工作台、台账与对账。</li>
+      <li>生成后查看页面、源码和验收结果；需要复用的页面可按结果区提供的入口保存为模板。</li></ul>
+
+    <h3><em>2</em>设计台：从截图或 Axure 开始</h3>
+    <ul><li>点击「上传设计图」选择 PNG、JPG 或 WebP 图片，也可将图片拖入画布；公开源码版请上传自己的图片。</li>
+      <li>点击「AI 识别」提取页面结构，核对识别出的文字、字段与按钮；不确定项应先修正再生成。</li>
+      <li>需要手动调整时，使用「自动拆层」、框选和图层列表；选中图层后设置语义与名称。「按图层生成草稿」将标注整理成结构草稿。</li>
+      <li>常用快捷键：<span class="kbd">V</span> 选择/拖动，<span class="kbd">M</span> 框选，<span class="kbd">I</span> 取色，<span class="kbd">S</span> 细分图层，方向键微移，<span class="kbd">Delete</span> 移除。Ctrl / Shift 点击可多选。</li>
+      <li>Axure 导出文件夹请点击「导入 Axure」，填写本机导出目录、选择页面与主题，再点「读取并生成」。只有网址时请使用「参考网页」。</li>
+      <li>点击「生成页面」，查看结果；「回到画布」可继续调整。AI 识别失败时可点击「自检」查看可读的错误提示。</li></ul>
+
+    <h3><em>3</em>参考网页：读取本机或内网原型</h3>
+    <ol><li>选择访问方式：公开网站选「公开网页」；本机浏览器原型或内网系统选「本机 / 授权内网原型」。</li>
+      <li>输入带有 <code>http://</code> 或 <code>https://</code> 的完整地址，设置视口和最多采集页数。电脑须能访问该原型。</li>
+      <li>需要登录时勾选「手动登录后采集」。在弹出的独立浏览器完成登录，再点击「登录完成，开始采集」。</li>
+      <li>希望复用现有项目的主题和组件时，填写「当前项目目录」：选择本机前端项目根目录。留空可继续静态还原。</li>
+      <li>点击「采集网页」，查看截图、主题来源、页面数及交互清单。可分别「导出页面数据」「导出页面主题」「导出原型与交互数据」或「下载完整包」。</li>
+      <li>选择生成方式并补充要求：静态方式生成 HTML/CSS；「按项目主题生成代码包」根据关联项目的框架、主题和组件依赖生成新增文件建议。</li>
+      <li>点击 AI 生成按钮，等待结果。静态方式可查看页面预览；项目代码方式显示交付说明，下载代码包后需在目标项目中构建、运行和验证。</li></ol>
+    <p>原型交互清单记录可读取的跳转、Tab、弹窗等声明；「待确认」表示尚未实际验证。保存、提交、删除、审批等真实业务动作不会自动执行。</p>
+
+    <h3><em>4</em>工作区、结果与下载</h3>
+    <ul><li>顶部工作区下拉框切换当前任务分组；「工作区」可新建、重命名或删除分组。删除前请确认提示，相关产物可能一并移除。</li>
+      <li>「产物与日志」可按工作区、结果和名称筛选，打开历史页面、查看报告、下载单个文件或压缩包。</li>
+      <li>「生成成功」表示文件已生成，不等于视觉、交互和项目编译均通过。先检查验收报告，再对照原型测试。</li>
+      <li>项目代码包不会直接覆盖原项目；先审阅主题引用、路由接入和待补接口，再合入项目。</li></ul>
+
+    <h3><em>5</em>AI 与对话操作</h3>
+    <p>通过 DSH 插件进入时，AI 功能自动使用宿主选定的模型，无需在本页重复填写密钥；截图和原型还原需要模型支持图片。切换模型后如仍显示旧状态，可重新加载工作台或让 AI 重新打开 Studio。</p>
+    <p>也可以直接在 DSH 对话中描述任务，例如：「使用页面生成插件，读取我提供的内网原型，关联当前前端项目，按项目主题生成代码包，并列出待确认交互。」AI 会调用插件工具并返回产物。</p>
+    <div class="note">采集在本机进行。点击 AI 识别或生成时，参考页面和必要的项目主题内容会交给当前模型处理；内部资料请选择组织允许使用的模型。无法连接时先确认原型可访问、模型可用，再根据界面提示重试。</div>
+  </div>
+</div>
+</div>
+<div class="guide" id="axDlg" role="dialog" aria-modal="true" aria-labelledby="axTitle">
+<div class="guide-box" style="width:min(620px,calc(100vw - 40px))">
+  <div class="guide-h"><h2 id="axTitle">导入 Axure 原型 · HTML 导出目录</h2><span class="sp"></span><button class="btn sm" id="bAxClose" aria-label="关闭">关闭</button></div>
+  <div class="guide-b">
+    <p>在 Axure 里「发布 → 生成 HTML 文件」，把导出的<b>根目录</b>路径粘到下面（里面应有 <code>start.html</code>、<code>data/document.js</code>、<code>files/</code>）。不需要拆层标注：字段、列、按钮、状态直接读 Axure 里写的标注。</p>
+    <label class="f">导出目录（本机路径）<input id="axDir" placeholder="例 D:\原型\仓储系统_html" spellcheck="false"></label>
+    <div class="row"><button class="btn sm" id="bAxSample">用内置样例</button><span class="hint" style="margin:0">路径只在本机读取，不上传</span></div>
+    <label class="f">页面<select id="axPage"><option value="">默认第一页（读取后可切换）</option></select></label>
+    <label class="f">主题<select id="axTheme"><option value="premium">高级感 · Dribbble 风格</option><option value="default">Skill 默认令牌</option></select></label>
+    <div class="hint" id="axInfo"></div>
+    <div class="row" style="margin-top:14px"><span class="sp"></span><button class="btn p" id="bAxGo">读取并生成</button></div>
+  </div>
+</div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div class="guide" id="hisDlg" role="dialog" aria-modal="true" aria-labelledby="hisTitle">
+<div class="guide-box" style="width:min(1080px,calc(100vw - 40px))">
+  <div class="guide-h"><h2 id="hisTitle">产物与运行日志</h2><span class="sp"></span><button class="btn sm" id="bHisClose" aria-label="关闭">关闭</button></div>
+  <div class="guide-b">
+    <div class="row">
+      <label class="f" style="margin:0;width:200px">工作区<select id="hisWs"><option value="">全部工作区</option></select></label>
+      <label class="f" style="margin:0;width:140px">结果<select id="hisSt"><option value="">全部</option><option value="ok">成功</option><option value="fail">失败</option></select></label>
+      <label class="f" style="margin:0;flex:1;min-width:180px">搜索<input id="hisQ" placeholder="页面名 / 来源 / 运行号"></label>
+      <button class="btn sm" id="bHisDel" style="align-self:flex-end" disabled>批量删除</button>
+      <button class="btn sm" id="bHisReload" style="align-self:flex-end">刷新</button>
+    </div>
+    <div class="hint" id="hisSum"></div>
+    <table class="his"><thead><tr><th style="width:34px"><input type="checkbox" id="hisSelAll" title="全选 / 取消全选"></th><th>操作时间</th><th>工作区</th><th>来源</th><th>页面</th><th>结果</th><th>验收</th><th>成功文件</th><th>操作</th></tr></thead><tbody id="hisBody"></tbody></table>
+  </div>
+</div>
+</div>
+<div class="guide" id="wsDlg" role="dialog" aria-modal="true" aria-labelledby="wsTitle">
+<div class="guide-box" style="width:min(620px,calc(100vw - 40px))">
+  <div class="guide-h"><h2 id="wsTitle">文件工作区</h2><span class="sp"></span><button class="btn sm" id="bWsClose" aria-label="关闭">关闭</button></div>
+  <div class="guide-b">
+    <p>每个工作区用于独立保存一组任务产物。生成结果保存在当前工作区，历史记录可按工作区筛选。</p>
+    <div class="row"><input id="wsNew" maxlength="40" placeholder="新工作区名称，如：仓储项目二期" style="flex:1;height:32px;padding:0 9px;border:1px solid var(--line);border-radius:8px"><button class="btn p sm" id="bWsAdd">新建</button></div>
+    <table class="his" style="margin-top:12px"><thead><tr><th>名称</th><th>运行数</th><th>最后使用</th><th>操作</th></tr></thead><tbody id="wsBody"></tbody></table>
+  </div>
+</div>
+</div>
+<script src="/studio/semantic.js"></script>
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const S = {img:null, w:0, h:0, layers:[], sel:null, tool:"select", seq:0, brand:null, scale:1, res:null,
+  multi:new Set(), showNoise:false, exSrc:null, lowConf:[]}; // multi=多选图层 · showNoise=显示装饰层 · exSrc=extract 来源（图层标注时自动同步）· lowConf=低置信度元素（画布高亮）
+const cv = $("#cv"), ctx = cv.getContext("2d", {willReadFrequently:true});
+const ov = $("#ov");
+const KINDS = ["区块","侧栏","品牌","菜单分组","菜单","顶栏","面包屑","用户信息","标题","查询区","查询条件","查询按钮","表单区","字段",
+  "表格","表头","列头","操作列","复选框","表体","工具条","按钮","分页","页码","卡片","指标卡","标签","图标","文本"];
+// 语义 → 生成器用得上的分组色（图层面板里一眼分出结构 / 内容 / 操作）
+const KCLR = {"侧栏":"#64748B","顶栏":"#64748B","卡片":"#64748B","表格":"#64748B","查询区":"#64748B","表单区":"#64748B","表头":"#64748B","表体":"#64748B","工具条":"#64748B","分页":"#64748B",
+  "列头":"#2563EB","查询条件":"#0D9488","字段":"#0D9488","按钮":"#D97706","查询按钮":"#D97706","操作列":"#D97706","菜单":"#7C3AED","菜单分组":"#7C3AED","标题":"#DB2777","指标卡":"#0891B2"};
+
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("on"),1800);}
+function log(m,cls){const d=document.createElement("div");d.textContent=m;if(cls)d.className=cls;d.title=m;$("#log").prepend(d);}
+function step(n){for(let i=1;i<=4;i++)$("#s"+i).classList.toggle("on",i===n);}
+const hex = (r,g,b) => "#"+[r,g,b].map(v=>v.toString(16).padStart(2,"0")).join("").toUpperCase();
+
+/* ---------- 载入设计图 ---------- */
+function loadImage(src){
+  return new Promise((ok,no)=>{const im=new Image();im.onload=()=>ok(im);im.onerror=no;im.src=src;}).then(im=>{
+    S.img=im;S.w=im.naturalWidth;S.h=im.naturalHeight;S.layers=[];S.sel=null;S.seq=0;S.brand=null;S.multi.clear();S.exSrc=null;
+    S.lowConf=[];$("#lowConf").hidden=true;ov.querySelectorAll(".hl").forEach(e=>e.remove());
+    cv.width=S.w;cv.height=S.h;ctx.drawImage(im,0,0);
+    S.scale=Math.min(1,($("#stage").clientWidth-56)/S.w);
+    cv.style.width=Math.round(S.w*S.scale)+"px";
+    $("#board").hidden=false;$("#empty").hidden=true;closeRes();
+    PX=null; // 换图后像素缓存必须失效，否则语义识别读到上一张图
+    ["#bAuto","#bPixel","#bClear","#bNameEx","#bBatch","#bFromLayers","#bForge"].forEach(s=>$(s).disabled=false);
+    $("#bAI").disabled=!S.ai;
+    buildPalette();render();step(2);log("载入设计图 "+S.w+"×"+S.h);
+  });
+}
+function readFile(f){
+  if(!f||!/^image\/(png|jpeg|webp)$/.test(f.type)){toast("只支持 PNG / JPG / WebP");return;}
+  // 换新图必须清掉上一张图的 extract，否则 semSplit 会把旧名称（页名/按钮/列头）套到新图的图层上
+  const r=new FileReader();r.onload=()=>{S.src=r.result;$("#ex").value="";$("#exHint").textContent="";S.exSrc=null;loadImage(r.result).then(()=>semSplit());};r.readAsDataURL(f);
+}
+$("#file").onchange=e=>readFile(e.target.files[0]);
+$("#stage").addEventListener("dragover",e=>e.preventDefault());
+$("#stage").addEventListener("drop",e=>{e.preventDefault();readFile(e.dataTransfer.files[0]);});
+
+/* ---------- 渲染：画布 + 覆盖框 + 图层面板 ---------- */
+function redraw(){
+  ctx.clearRect(0,0,S.w,S.h);ctx.drawImage(S.img,0,0);
+  // 被移除/移动过的图层：原位置补底色，再把像素画到新位置
+  for(const L of S.layers){if(L.removed||L.dx||L.dy){ctx.fillStyle=L.fill;ctx.fillRect(L.x,L.y,L.w,L.h);}}
+  for(const L of S.layers){if(!L.removed&&(L.dx||L.dy))ctx.drawImage(L.bmp,L.x+L.dx,L.y+L.dy);}
+}
+function render(){
+  const k=S.scale;ov.innerHTML="";
+  for(const L of S.layers){
+    if(L.removed||(!S.showNoise&&L.noise))continue;   // 装饰层默认不上框，要处理时点「装饰 N」显示
+    const b=document.createElement("div");
+    b.className="box"+(L.id===S.sel||S.multi.has(L.id)?" on":"");
+    Object.assign(b.style,{left:(L.x+L.dx)*k+"px",top:(L.y+L.dy)*k+"px",width:L.w*k+"px",height:L.h*k+"px"});
+    if(L.id===S.sel){const lb=document.createElement("span");lb.className="lb";lb.textContent=L.kind+" · "+L.w+"×"+L.h;b.appendChild(lb);}
+    ov.appendChild(b);
+  }
+  const box=$("#layers");box.innerHTML="";
+  const all=S.layers.filter(l=>!l.removed),noiseN=all.filter(l=>l.noise).length;
+  const live=all.filter(l=>S.showNoise||!l.noise);
+  $("#layerCount").textContent=live.length+(noiseN&&!S.showNoise?"（+"+noiseN+" 装饰）":"");
+  const bn=$("#bNoise"),bt=$("#bTidy");
+  bn.hidden=bt.hidden=!noiseN;bn.textContent=(S.showNoise?"隐藏装饰 ":"装饰 ")+noiseN;bn.title="图标/碎块默认折叠，点这里显示/隐藏";
+  // 树序：父层在前、子层缩进紧跟其后（语义拆层有父子关系；像素拆层无 parent，退化为按坐标排）
+  const ids=new Set(live.map(l=>l.id)),pos=(a,b)=>a.y-b.y||a.x-b.x,tree=[];
+  const walk=p=>live.filter(l=>(l.parent&&ids.has(l.parent)?l.parent:null)===p).sort(pos).forEach(l=>{tree.push(l);walk(l.id);});
+  walk(null);
+  tree.forEach(L=>{
+    const d=document.createElement("div");d.className="layer"+(L.id===S.sel||S.multi.has(L.id)?" on":"");d.tabIndex=0;
+    d.innerHTML='<span class="k"></span><span class="n"></span><span class="sz"></span>';
+    const kk=d.querySelector(".k"),nn=d.querySelector(".n");kk.textContent=L.kind;kk.style.borderLeftColor=KCLR[L.kind]||"transparent";
+    d.style.paddingLeft=(8+Math.min(3,L.depth||0)*12)+"px";
+    nn.textContent=L.name||L.ph||("#"+L.id);if(!L.name&&L.ph)nn.classList.add("ph");
+    d.querySelector(".sz").textContent=L.w+"×"+L.h;
+    d.onclick=e=>{
+      if(e.ctrlKey||e.metaKey||e.shiftKey){          // Ctrl/Shift 点击：加入/移出多选，配合右侧批量标注
+        if(S.multi.has(L.id))S.multi.delete(L.id);else S.multi.add(L.id);
+        S.sel=L.id;render();
+      }else{S.multi.clear();select(L.id);}
+    };
+    d.onkeydown=e=>{if(e.key==="Enter")select(L.id);};
+    box.appendChild(d);
+  });
+  renderProps();
+}
+function select(id){S.sel=id;render();}
+const cur=()=>S.layers.find(l=>l.id===S.sel);
+
+/* ---------- 拆层：按留白递归 XY 切分（纯本地，不依赖模型） ---------- */
+let PX=null;
+function pixels(){if(!PX){const c=document.createElement("canvas");c.width=S.w;c.height=S.h;const g=c.getContext("2d");g.drawImage(S.img,0,0);PX=g.getImageData(0,0,S.w,S.h).data;}return PX;}
+function bgOf(r){
+  const d=pixels(),cnt=new Map();let best=0,key=0;
+  const st=Math.max(2,Math.floor(Math.sqrt(r.w*r.h/4000)));
+  for(let y=r.y;y<r.y+r.h;y+=st)for(let x=r.x;x<r.x+r.w;x+=st){
+    const i=(y*S.w+x)*4,k=(d[i]>>3)<<10|(d[i+1]>>3)<<5|(d[i+2]>>3);
+    const n=(cnt.get(k)||0)+1;cnt.set(k,n);if(n>best){best=n;key=k;}
+  }
+  return [(key>>10&31)*8+4,(key>>5&31)*8+4,(key&31)*8+4];
+}
+function segs(r,bg,axis){
+  const d=pixels(),len=axis?r.w:r.h,other=axis?r.h:r.w,on=new Uint8Array(len),full=new Uint8Array(len);
+  const st=other>400?2:1,tot=Math.ceil(other/st);
+  for(let a=0;a<len;a++){
+    let n=0;
+    for(let b=0;b<other;b+=st){
+      const x=axis?r.x+a:r.x+b,y=axis?r.y+b:r.y+a,i=(y*S.w+x)*4;
+      if(Math.abs(d[i]-bg[0])>20||Math.abs(d[i+1]-bg[1])>20||Math.abs(d[i+2]-bg[2])>20)n++;
+    }
+    on[a]=n>0?1:0;full[a]=n>=tot*0.9?1:0;
+  }
+  // 细分隔线（表格行线、卡片分割线）：贯通 ≥90% 且厚度 ≤3px → 视作留白，否则表格永远是一整块
+  if(other>=60)for(let a=0;a<len;){if(!full[a]){a++;continue;}let e=a;while(e<len&&full[e])e++;
+    if(e-a<=3&&e-a<len)for(let k=a;k<e;k++)on[k]=0;a=e;}
+  const out=[],gap=axis?8:3;let s=-1,last=-1;
+  for(let a=0;a<len;a++){if(on[a]){if(s<0)s=a;else if(a-last>gap){out.push([s,last+1]);s=a;}last=a;}}
+  if(s>=0)out.push([s,last+1]);
+  return out.map(([a,b])=>axis?{x:r.x+a,y:r.y,w:b-a,h:r.h}:{x:r.x,y:r.y+a,w:r.w,h:b-a});
+}
+function trim(r,bg){const v=segs(r,bg,0);if(!v.length)return null;const y0=v[0].y,y1=v[v.length-1].y+v[v.length-1].h;
+  const h=segs({x:r.x,y:y0,w:r.w,h:y1-y0},bg,1);if(!h.length)return null;
+  return {x:h[0].x,y:y0,w:h[h.length-1].x+h[h.length-1].w-h[0].x,h:y1-y0};}
+/* 贯穿整段的色彩分界线（如通栏深色侧栏右缘、顶栏下缘）：
+   留白切分要求整行/整列都是背景，侧栏+顶栏同时贯通时永远找不到留白，故补一条"边缘切分"。 */
+function edgeSplit(r,axis){
+  const d=pixels(),len=axis?r.w:r.h,other=axis?r.h:r.w;
+  if(len<16||other<8)return [];
+  const st=other>400?2:1,need=Math.ceil(other/st)*0.9,cuts=[];
+  for(let a=3;a<len-3;a++){
+    let n=0;
+    for(let b=0;b<other;b+=st){
+      const x=axis?r.x+a:r.x+b,y=axis?r.y+b:r.y+a,i=(y*S.w+x)*4,j=axis?i-4:i-S.w*4;
+      if(Math.abs(d[i]-d[j])+Math.abs(d[i+1]-d[j+1])+Math.abs(d[i+2]-d[j+2])>30)n++;
+    }
+    if(n>=need){if(cuts.length&&a-cuts[cuts.length-1]<=3)cuts[cuts.length-1]=a;else cuts.push(a);}
+  }
+  if(!cuts.length)return [];
+  const out=[];let s=0;
+  for(const c of cuts.concat(len)){if(c-s>=6)out.push(axis?{x:r.x+s,y:r.y,w:c-s,h:r.h}:{x:r.x,y:r.y+s,w:r.w,h:c-s});s=c;}
+  return out.length>1?out:[];
+}
+function xycut(r,depth,out,box){
+  if(out.length>400){out.push(r);return;} // 超上限：保留为整块而不是丢弃
+  const bg=bgOf(r);
+  for(const axis of [0,1]){
+    const parts=segs(r,bg,axis);
+    if(parts.length>1){
+      if(box)out.push(Object.assign({},r,{group:true}));
+      for(const p of parts){const t=trim(p,bg);if(!t||t.w<6||t.h<6)continue;
+        // 面积 ≥1% 的子块（查询卡片、表格卡片、侧栏分组）先作为容器层保留，再继续往下切
+        if(depth<6&&t.w*t.h>900)xycut(t,depth+1,out,t.w*t.h>=S.w*S.h*0.01);else out.push(t);}
+      return;
+    }
+  }
+  // 无留白可切 → 按贯通分界线切（先竖线：侧栏；再横线：顶栏），各子块作为容器继续切
+  if(depth<6)for(const axis of [1,0]){
+    const parts=edgeSplit(r,axis);
+    if(parts.length>1){for(const p of parts)xycut(p,depth+1,out,true);return;}
+  }
+  // 整块与背景不同色（如深色侧栏、卡片）→ 换成块内底色再切一次
+  const inner=bgOf({x:r.x+2,y:r.y+2,w:Math.max(1,r.w-4),h:Math.max(1,r.h-4)});
+  const same=Math.abs(inner[0]-bg[0])+Math.abs(inner[1]-bg[1])+Math.abs(inner[2]-bg[2])<24;
+  if(!same&&depth<5){const ps=segs(r,inner,0);if(ps.length>1){out.push(Object.assign({},r,{group:true}));
+    for(const p of ps){const t=trim(p,inner);if(t&&t.w>=6&&t.h>=6)xycut(t,depth+1,out);}return;}}
+  out.push(r);
+}
+function guessKind(r){
+  if(r.x<8&&r.h>S.h*.6&&r.w<S.w*.3)return "侧栏";
+  if(r.y<8&&r.w>S.w*.5&&r.h<100)return "顶栏";
+  if(r.group)return r.w>S.w*.4?"卡片":"区块";
+  if(r.h<=40&&r.w<=150&&r.w>=36)return "按钮";
+  if(r.h<=26&&r.w<=34)return "图标";
+  if(r.h<=30)return "文本";
+  return "区块";
+}
+function addLayer(r,kind){
+  const bmp=document.createElement("canvas");bmp.width=r.w;bmp.height=r.h;
+  bmp.getContext("2d").drawImage(S.img,r.x,r.y,r.w,r.h,0,0,r.w,r.h);
+  const bg=bgOf({x:Math.max(0,r.x-3),y:Math.max(0,r.y-3),w:Math.min(S.w-r.x+3,r.w+6),h:Math.min(S.h-r.y+3,r.h+6)});
+  const L={id:++S.seq,x:r.x,y:r.y,w:r.w,h:r.h,dx:0,dy:0,kind:kind||guessKind(r),name:"",bmp,fill:hex(...bg),removed:false};
+  // 装饰层：图标、角标、细碎色块 —— 不参与命名与 extract 统计，默认折叠，可一键清理
+  L.noise = (kind||guessKind(r))==="图标" || (r.w<10||r.h<8);
+  S.layers.push(L);return L;
+}
+function autoSplit(region){
+  const t0=performance.now(),out=[];
+  const root=region||{x:0,y:0,w:S.w,h:S.h};
+  xycut(root,0,out);
+  // 去掉与起始区域/已有图层几乎重合的结果（再拆分时避免"原样复制一层"）
+  const near=(a,b)=>Math.abs(a.x-b.x)<=3&&Math.abs(a.y-b.y)<=3&&Math.abs(a.w-b.w)<=6&&Math.abs(a.h-b.h)<=6;
+  const keep=out.filter(r=>!(region&&near(r,root))&&!S.layers.some(l=>!l.removed&&near(r,l)));
+  keep.forEach(r=>addLayer(r));
+  render();log("拆层完成："+keep.length+" 个图层（"+Math.round(performance.now()-t0)+" ms）","ok");
+  return keep.length;
+}
+/* 语义拆层：先认结构与语义，再按 extract（若有）命名 */
+function semSplit(){
+  const t0=performance.now();S.layers=[];S.sel=null;S.seq=0;S.multi.clear();redraw();
+  let made=[];
+  try{made=window.Semantic.analyze();}catch(e){log("语义识别出错，回退像素拆层："+e.message,"bad");autoSplit();return 0;}
+  let ex=null;try{ex=JSON.parse($("#ex").value);}catch(_){}
+  const nm=ex?window.Semantic.applyNames(ex):0;
+  render();semSummary();syncEx();
+  log("语义拆层："+made.length+" 个图层（"+Math.round(performance.now()-t0)+" ms）"+(nm?"，已按 extract 命名 "+nm+" 个":""),"ok");
+  // ?probe：把识别结果写进 DOM，供无头浏览器验收（不影响正常使用）
+  if(new URLSearchParams(location.search).has("probe")){let p=$("#probeOut");if(!p){p=document.createElement("pre");p.id="probeOut";p.hidden=true;document.body.appendChild(p);}
+    window.__semDbg=[];S.layers=[];S.seq=0;
+    made=window.Semantic.analyze();
+    try{const ex2=JSON.parse($("#ex").value);if(ex2)window.Semantic.applyNames(ex2);}catch(_){}
+    render();
+    // 自测：模拟"只标语义、extract 为空直接点生成"——buildFromLayers 必须能兜底出可用结构
+    const saved=$("#ex").value;$("#ex").value="";S.exSrc=null;
+    const st=buildFromLayers();$("#ex").value=saved;
+    p.textContent="PROBE::"+JSON.stringify({layers:S.layers.filter(l=>!l.removed).map(l=>({k:l.kind,n:l.name,x:l.x,y:l.y,w:l.w,h:l.h,d:l.depth||0})),
+      dbg:window.__semDbg,self:st?{arch:st.ex.archetype,cols:st.ex.columns.length,ph:st.ph}:null})+"::END";}
+  return made.length;
+}
+function semSummary(){
+  const live=S.layers.filter(l=>!l.removed),c=k=>live.filter(l=>l.kind===k).length;
+  const parts=[["菜单",c("菜单")],["标题",c("标题")],["查询条件",c("查询条件")],["字段",c("字段")],["按钮",c("按钮")+c("查询按钮")],
+    ["表格",c("表格")],["列头",c("列头")],["操作列",c("操作列")],["分页",c("分页")],["指标卡",c("指标卡")]].filter(p=>p[1]);
+  const unnamed=live.filter(l=>["列头","查询条件","字段","按钮","菜单","标题"].includes(l.kind)&&!l.name).length;
+  $("#semSum").innerHTML=parts.length?"识别出："+parts.map(p=>"<b>"+p[0]+"</b> "+p[1]).join(" · ")+
+    (unnamed?"<br>还有 "+unnamed+" 个待命名（灰色斜体为占位）——点「按 extract 命名」或「批量命名」":"<br>语义元素已全部命名"):"";
+}
+$("#bAuto").onclick=()=>semSplit();
+$("#bPixel").onclick=()=>{S.layers=[];S.sel=null;S.multi.clear();redraw();autoSplit();$("#semSum").textContent="";};
+$("#bClear").onclick=()=>{S.layers=[];S.sel=null;S.multi.clear();redraw();render();$("#semSum").textContent="";};
+$("#bNoise").onclick=()=>{S.showNoise=!S.showNoise;render();};
+$("#bTidy").onclick=()=>{
+  const ns=S.layers.filter(l=>!l.removed&&l.noise);if(!ns.length)return;
+  ns.forEach(l=>l.removed=true);S.multi.clear();if(S.sel&&ns.some(l=>l.id===S.sel))S.sel=null;
+  redraw();render();syncEx();log("已清理 "+ns.length+" 个装饰层（图标/碎块）","ok");
+};
+$("#bNameEx").onclick=()=>{let ex;try{ex=JSON.parse($("#ex").value);}catch(_){toast("右侧 extract.json 为空或不是合法 JSON");return;}
+  const n=window.Semantic.applyNames(ex);render();semSummary();syncEx();toast(n?"已命名 "+n+" 个图层":"没有可对齐的名称");};
+$("#bBatch").onclick=()=>{
+  const kinds=["列头","查询条件","字段","按钮","菜单","标题"].filter(k=>S.layers.some(l=>!l.removed&&l.kind===k));
+  if(!kinds.length){toast("没有可命名的语义图层");return;}
+  const k=prompt("给哪类图层命名？可选："+kinds.join(" / "),kinds[0]);if(!k||!kinds.includes(k))return;
+  const ls=S.layers.filter(l=>!l.removed&&l.kind===k).sort((a,b)=>a.y-b.y||a.x-b.x);
+  const v=prompt("按从上到下、从左到右的顺序输入 "+ls.length+" 个名称，用逗号或顿号分隔：",ls.map(l=>l.name||"").join("，"));
+  if(v==null)return;v.split(/[,，、]/).map(s=>s.trim()).forEach((s,i)=>{if(ls[i]&&s){ls[i].name=s;ls[i].autoName=false;}});
+  render();semSummary();syncEx();};
+
+/* ---------- 画布交互：选择/拖动、框选、取色、再拆分 ---------- */
+document.querySelectorAll(".tool").forEach(b=>b.onclick=()=>setTool(b.dataset.t));
+function setTool(t){S.tool=t;document.querySelectorAll(".tool").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  if(t==="split"){const L=cur();if(!L){toast("先选中一个图层");setTool("select");return;}
+    const n=autoSplit({x:L.x,y:L.y,w:L.w,h:L.h});
+    if(n){if(L.kind==="区块")L.kind=L.w>S.w*.4?"卡片":"区块";L.group=true;render();toast("已拆出 "+n+" 个子图层");}
+    else toast("该区域已是最小单元，无法再拆");
+    setTool("select");}}
+document.addEventListener("keydown",e=>{
+  if(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||!S.img||$("#guide").classList.contains("on"))return;
+  const m={v:"select",m:"box",i:"pick",s:"split"}[e.key.toLowerCase()];if(m){setTool(m);return;}
+  const L=cur();if(!L)return;
+  if(e.key==="Delete"||e.key==="Backspace"){L.removed=true;S.sel=null;redraw();render();}
+  const st=e.shiftKey?10:1,mv={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[e.key];
+  if(mv){e.preventDefault();L.dx+=mv[0];L.dy+=mv[1];redraw();render();}
+});
+function pt(e){const r=ov.getBoundingClientRect();return {x:Math.round((e.clientX-r.left)/S.scale),y:Math.round((e.clientY-r.top)/S.scale)};}
+function hit(p){let best=null;for(const L of S.layers){if(L.removed)continue;const x=L.x+L.dx,y=L.y+L.dy;
+  if(p.x>=x&&p.x<x+L.w&&p.y>=y&&p.y<y+L.h&&(!best||L.w*L.h<best.w*best.h))best=L;}return best;}
+let drag=null;
+ov.addEventListener("pointerdown",e=>{
+  if(!S.img)return;const p=pt(e);ov.setPointerCapture(e.pointerId);
+  if(S.tool==="pick"){const d=ctx.getImageData(p.x,p.y,1,1).data;setBrand(hex(d[0],d[1],d[2]));setTool("select");return;}
+  if(S.tool==="box"){const rb=document.createElement("div");rb.className="rubber";ov.appendChild(rb);drag={mode:"box",p,rb};return;}
+  const L=hit(p);S.sel=L?L.id:null;
+  if(!(e.ctrlKey||e.metaKey||e.shiftKey))S.multi.clear(); // 普通点击清空多选，Ctrl/Shift 累加
+  render();
+  if(L)drag={mode:"move",p,L,dx:L.dx,dy:L.dy};
+});
+ov.addEventListener("pointermove",e=>{
+  if(!drag)return;const p=pt(e);
+  if(drag.mode==="move"){drag.L.dx=drag.dx+p.x-drag.p.x;drag.L.dy=drag.dy+p.y-drag.p.y;redraw();render();}
+  else{const x=Math.min(p.x,drag.p.x),y=Math.min(p.y,drag.p.y),k=S.scale;
+    Object.assign(drag.rb.style,{left:x*k+"px",top:y*k+"px",width:Math.abs(p.x-drag.p.x)*k+"px",height:Math.abs(p.y-drag.p.y)*k+"px"});}
+});
+ov.addEventListener("pointerup",e=>{
+  if(!drag)return;const p=pt(e),d=drag;drag=null;
+  if(d.mode==="box"){d.rb.remove();
+    const r={x:Math.max(0,Math.min(p.x,d.p.x)),y:Math.max(0,Math.min(p.y,d.p.y))};
+    r.w=Math.min(S.w-r.x,Math.abs(p.x-d.p.x));r.h=Math.min(S.h-r.y,Math.abs(p.y-d.p.y));
+    if(r.w>=4&&r.h>=4){const L=addLayer(r,"区块");S.sel=L.id;render();log("框选图层 #"+L.id);}
+    setTool("select");}
+});
+
+/* ---------- 图层属性：语义标注 / 导出 / 移除（支持多选批量） ---------- */
+function renderProps(){
+  const box=$("#props");
+  const picked=[...S.multi].map(id=>S.layers.find(l=>l.id===id)).filter(l=>l&&!l.removed);
+  if(picked.length>1){ // 批量面板：一次给一组图层改语义 / 按顺序命名，不用一个个点
+    const sorted=picked.slice().sort((a,b)=>a.y-b.y||a.x-b.x);
+    box.innerHTML='<div class="hint"><b>已选 '+sel.length+' 个图层</b>（Ctrl / Shift 点击图层可增减）</div>'+
+      '<label class="f">批量设置语义<select id="mKind"></select></label>'+
+      '<label class="f">按顺序命名（从上到下、从左到右，逗号分隔；留空跳过）<input id="mNames" placeholder="如：订单号,客户名称,下单日期,金额"></label>'+
+      '<div class="row" style="margin-top:10px"><button class="btn sm p" id="mApply">应用名称</button><button class="btn sm" id="mDel">移除所选</button><button class="btn sm" id="mClear">取消多选</button></div>'+
+      '<div class="hint" style="margin-top:8px">'+sorted.map(l=>esc(l.kind+" · "+(l.name||l.ph||("#"+l.id)))).join("<br>")+"</div>";
+    const mk=$("#mKind");KINDS.forEach(k=>{const o=document.createElement("option");o.textContent=k;mk.appendChild(o);});
+    mk.onchange=()=>{picked.forEach(l=>l.kind=mk.value);render();syncEx();log("已把 "+picked.length+" 个图层改为「"+mk.value+"」");};
+    $("#mApply").onclick=()=>{
+      const v=$("#mNames").value.split(/[,，、]/).map(s=>s.trim());let n=0;
+      v.forEach((s,i)=>{if(sorted[i]&&s){sorted[i].name=s;sorted[i].autoName=false;n++;}});
+      if(n){render();syncEx();toast("已命名 "+n+" 个图层");}else toast("没有可应用的名称");};
+    $("#mDel").onclick=()=>{picked.forEach(l=>l.removed=true);S.multi.clear();S.sel=null;redraw();render();syncEx();log("已移除 "+picked.length+" 个图层");};
+    $("#mClear").onclick=()=>{S.multi.clear();render();};
+    return;
+  }
+  const L=cur();
+  if(!L){box.innerHTML='<div class="hint">选中一个图层后可标注语义、导出或移除。快捷键：V 选择 · M 框选 · I 取色 · S 再拆分 · 方向键微移 · Delete 移除。<br><b>批量：</b>Ctrl / Shift 点击多个图层，可一次改语义、按顺序命名。</div>';return;}
+  box.innerHTML='<div class="row" style="margin-top:0"><canvas id="thumb" style="max-width:100%;max-height:90px;border:1px solid var(--line);border-radius:8px;background:#fff"></canvas></div>'+
+    '<label class="f">语义<select id="pKind"></select></label><label class="f">名称（会进入 extract）<input id="pName" maxlength="40" placeholder="如：订单号 / 新建订单 / 销售管理"></label>'+
+    '<div class="hint">列头→表格列 · 查询条件→筛选框 · 按钮→操作 · 菜单→侧栏 · 标题→页面标题。拆层认不出语义和文字，只标页面内容即可，背景/装饰不用标。</div>'+
+    '<div class="hint">位置 '+(L.x+L.dx)+','+(L.y+L.dy)+' · 尺寸 '+L.w+'×'+L.h+' · 底色 '+L.fill+'</div>'+
+    '<div class="row"><button class="btn sm" id="pPng">导出 PNG</button><button class="btn sm" id="pCss">复制 CSS</button><button class="btn sm" id="pReset">复位</button><button class="btn sm" id="pDel">移除</button></div>';
+  const t=$("#thumb");t.width=L.w;t.height=L.h;t.getContext("2d").drawImage(L.bmp,0,0);
+  const sel=$("#pKind");KINDS.forEach(k=>{const o=document.createElement("option");o.textContent=k;sel.appendChild(o);});
+  sel.value=L.kind;sel.onchange=()=>{L.kind=sel.value;render();syncEx();};
+  const nm=$("#pName");nm.value=L.name;nm.oninput=()=>{L.name=nm.value.trim();const n=document.querySelector(".layer.on .n");if(n)n.textContent=L.name||("#"+L.id);syncEx();};
+  $("#pPng").onclick=()=>{const a=document.createElement("a");a.download="layer-"+L.id+".png";a.href=L.bmp.toDataURL("image/png");a.click();};
+  $("#pCss").onclick=()=>{const css=".layer-"+L.id+"{position:absolute;left:"+(L.x+L.dx)+"px;top:"+(L.y+L.dy)+"px;width:"+L.w+"px;height:"+L.h+"px;background:"+L.fill+"}";
+    (navigator.clipboard?navigator.clipboard.writeText(css):Promise.reject()).then(()=>toast("已复制 CSS"),()=>{prompt("复制 CSS",css);});};
+  $("#pReset").onclick=()=>{L.dx=L.dy=0;redraw();render();};
+  $("#pDel").onclick=()=>{L.removed=true;S.sel=null;redraw();render();};
+}
+
+/* ---------- 视觉令牌：从图里提取主色候选 ---------- */
+function buildPalette(){
+  const d=pixels(),cnt=new Map();
+  for(let i=0;i<d.length;i+=4*7){const r=d[i],g=d[i+1],b=d[i+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+    if(mx-mn<60||mx<70)continue; // 只要有彩度的颜色：灰阶不可能是主色
+    const k=(r>>4)<<8|(g>>4)<<4|(b>>4);cnt.set(k,(cnt.get(k)||0)+1);}
+  const top=[...cnt.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k])=>hex((k>>8&15)*16+8,(k>>4&15)*16+8,(k&15)*16+8));
+  const p=$("#palette");p.innerHTML="";
+  const auto=document.createElement("button");auto.className="btn sm";auto.textContent="自动";auto.onclick=()=>setBrand(null);p.appendChild(auto);
+  top.forEach(c=>{const s=document.createElement("button");s.className="sw";s.style.background=c;s.title=c;s.setAttribute("aria-label","主色 "+c);s.onclick=()=>setBrand(c);p.appendChild(s);});
+}
+function setBrand(c){S.brand=c;document.querySelectorAll("#palette .sw").forEach(s=>s.classList.toggle("on",s.title===c));
+  $("#brandHint").textContent="主色："+(c?c+"（手动指定，覆盖截图测量）":"自动（来自截图测量）");if(c)log("主色设为 "+c);}
+
+/* ---------- 结构：AI 识别 / 按图层标注生成草稿 ---------- */
+function setEx(o,src){$("#ex").value=JSON.stringify(o,null,2);$("#exHint").textContent="来源："+src+"。生成前请核对 uncertain 里的条目。";S.exSrc=src;}
+/* S6：低置信度概览 + 画布高亮。只读叠加层，不写入 S.layers、不参与生成。 */
+function renderLowConf(){
+  // 清掉旧高亮框，只重画 .hl（不碰 .box 图层框）
+  ov.querySelectorAll(".hl").forEach(e=>e.remove());
+  const k=S.scale;
+  for(const it of S.lowConf){
+    const b=it.bbox;if(!b||b.length!==4)continue;
+    const d=document.createElement("div");d.className="hl";
+    Object.assign(d.style,{left:b[0]*k+"px",top:b[1]*k+"px",width:b[2]*k+"px",height:b[3]*k+"px"});
+    const lb=document.createElement("span");lb.className="lb";
+    lb.textContent=(it.type||"元素")+" · "+(it.label||it.text||"")+" · "+(it.confidence==null?"?":Math.round(it.confidence*100)+"%");
+    d.appendChild(lb);ov.appendChild(d);
+  }
+}
+function showLowConf(conf){
+  const box=$("#lowConf");
+  if(!conf){S.lowConf=[];box.hidden=true;renderLowConf();return;}
+  const arr=conf.lowConfidence||[];S.lowConf=arr;
+  renderLowConf();
+  if(!arr.length){box.hidden=true;return;}
+  box.hidden=false;
+  let html="<b>"+arr.length+" 个元素低置信度</b>（置信度 &lt; "+(conf.threshold!=null?conf.threshold:0.7)+"），建议人工核对"
+    +" · <a href='#' id='lowConfOff'>关闭高亮</a>";
+  for(const it of arr){
+    const name=it.label||it.text||("元素 "+(it.id||""));
+    const why=(it.reasons||[]).join("；");
+    html+="<div class='lc'><b>"+esc(name)+"</b><span class='t'>"+(it.type||"")+"</span>"
+      +"<span class='t'>"+(it.confidence==null?"?":Math.round(it.confidence*100)+"%")+"</span>"
+      +(why?"<span class='r'>"+esc(why)+"</span>":"")+"</div>";
+  }
+  box.innerHTML=html;
+  $("#lowConfOff").onclick=e=>{e.preventDefault();S.lowConf=[];renderLowConf();box.hidden=true;};
+}
+$("#ex").addEventListener("input",()=>{S.exSrc="手动编辑";}); // 用户手改后不再自动覆盖
+/* 未命名的语义图层用占位名兜底（列1/字段1…）：只选语义、不填名称也能生成，
+   占位项数量随返回值带出，在日志和 uncertain 里明确提醒，而不是悄悄生成或直接报错 */
+function named(kind){
+  const ls=S.layers.filter(l=>!l.removed&&l.kind===kind).sort((a,b)=>a.y-b.y||a.x-b.x);
+  return {names:ls.map(l=>l.name||l.ph||"").filter(Boolean),ph:ls.filter(l=>!l.name).length};
+}
+function buildFromLayers(){
+  const live=S.layers.filter(l=>!l.removed&&["列头","字段","查询条件","按钮","查询按钮","菜单","标题"].includes(l.kind));
+  if(!live.length)return null;
+  const C=named("列头"),F=named("字段"),Q=named("查询条件"),B=named("按钮"),PB=named("查询按钮"),M=named("菜单"),T=named("标题");
+  const btn=B.names.concat(PB.names),cols=C.names.concat(F.names),ph=C.ph+F.ph+Q.ph+B.ph+PB.ph+M.ph+T.ph;
+  const has=k=>S.layers.some(l=>!l.removed&&l.kind===k);
+  // 原型按识别到的结构推断：表单字段 ≥6 → A2 单据表单（可有明细表格）；否则有表格 → A1；指标卡 ≥3 → A4
+  const arch=F.names.length>=6?"A2":has("表格")?"A1":cols.length?"A2":
+    S.layers.filter(l=>!l.removed&&l.kind==="指标卡").length>=3?"A4":"A1";
+  const ex={archetype:arch,pageName:T.names[0]||"未命名页面",columns:cols,
+    queryControls:Q.names.map(l=>({label:l,control:/日期|时间/.test(l)?"date-range":/状态|类型/.test(l)?"select":"input"})),
+    actions:btn.map((n,i)=>({name:n,scope:"header",primary:i===btn.length-1})),
+    nav:M.names.length?[{group:"",items:M.names}]:undefined,
+    confidence:{archetype:.6,columns:cols.length?.9:0,actions:.7},
+    uncertain:["原型按识别结构推断为 "+arch+"，请确认"]
+      .concat(cols.length<2?["列头/字段少于 2 个：请在图层上标语义并命名（Ctrl/Shift 多选可批量操作）"]:[])
+      .concat(ph?["有 "+ph+" 个图层还没填名称，暂用占位名（列1/字段1…），建议批量命名后再生成"]:[])};
+  return {ex,ph};
+}
+$("#bFromLayers").onclick=()=>{
+  const b=buildFromLayers();
+  if(!b){toast("还没有可用的语义图层：先拆层并给图层标语义");return;}
+  setEx(b.ex,"图层标注");
+  if(b.ph)toast("已生成 extract，其中 "+b.ph+" 处是占位名，建议批量命名");
+  else if(b.ex.columns.length<2)toast("列头不足 2 个，先在图层上标注");
+};
+/* 图层标注变化 → 来源为「图层标注」的 extract 自动重建，保证生成时拿到的是最新标注 */
+let _exT=null;
+function syncEx(){
+  if(S.exSrc!=="图层标注")return;
+  clearTimeout(_exT);
+  _exT=setTimeout(()=>{const b=buildFromLayers();if(b)$("#ex").value=JSON.stringify(b.ex,null,2);},400);
+}
+$("#bAI").onclick=async()=>{
+  if(!S.src){toast("请先上传截图");return;}
+  const mb=Math.round((S.src||"").length/1048576*100)/100;
+  $("#bAI").disabled=true;log("AI 识别中…（请求体 "+mb+" MB；识图偏慢，超时上限见自检）");
+  try{const r=await fetch("/api/ai/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({image:S.src,mode:"screenshot"})});
+    const j=await r.json();
+    if(!r.ok){
+      log("AI 识别失败："+(j.error||r.status),"bad");
+      if(j.advice)log("建议："+j.advice,"bad");
+      const a=j.ai||{};
+      if(a.host)log("通道 "+(a.channel||"-")+" · host "+a.host+" · model "+a.model
+        +" · 用时 "+(a.elapsed==null?"-":a.elapsed+"s")+" / 上限 "+(a.timeout||"-")+"s"
+        +" · 请求体 "+(a.payloadMB==null?"-":a.payloadMB+"MB"),"bad");
+      toast("AI 识别失败，点「自检」看卡在哪");return;}
+    setEx(j.extract,"AI 识别（"+j.model+"）");
+    showLowConf((j.ai||{}).conf);
+    log("AI 识别完成（用时 "+(((j.ai||{}).elapsed)==null?"-":j.ai.elapsed+"s")+"）","ok");}
+  catch(e){log("AI 识别失败："+e.message,"bad");toast("AI 识别失败，可改用图层标注");}
+  finally{$("#bAI").disabled=false;}
+};
+$("#bAICheck").onclick=async()=>{
+  $("#bAICheck").disabled=true;log("模型通道自检中（最后一步会真调一次模型）…");
+  try{const j=await (await fetch("/api/ai/selftest?deep=1")).json();
+    (j.steps||[]).forEach(s=>log((s.ok?"✓ ":"✗ ")+s.step+" · "+s.ms+"ms · "+s.detail,s.ok?"ok":"bad"));
+    if(j.error)log("自检未通过：请先把三个环境变量配好再重启服务","bad");
+    if(j.verdict)log("结论："+j.verdict,j.ok?"ok":"bad");}
+  catch(e){log("自检失败："+e.message,"bad");}
+  finally{$("#bAICheck").disabled=false;}
+};
+
+/* ---------- 生成：调用本地全链路 ---------- */
+function snapshot(){redraw();return cv.toDataURL("image/png");} // 编辑后的设计图（移除/移动已生效）
+$("#bForge").onclick=async()=>{
+  let ex=null;
+  try{ex=JSON.parse($("#ex").value);}catch(_){}
+  if(!S.src){toast("请先上传原图");return;}
+  if(!ex||ex.kind!=="screenshot"){
+    log("请先点击 AI 识别获取独立截图结构。旧原型识别和图层草稿不能用于截图还原；不会套用 A1–A6。","bad");
+    toast("请重新进行 AI 截图识别");return;
+  }
+  $("#bForge").disabled=true;step(3);log("生成中：识别校验 → 确定性生成 → 四类断言…");
+  try{
+    const r=await fetch("/api/forge/screenshot",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({image:S.src,spec:ex,workspace:S.ws})});
+    const j=await r.json();
+    (j.steps||[]).forEach(s=>log((s.ok?"✓ ":"✗ ")+s.step,s.ok?"ok":"bad"));
+    if(!j.ok){const bad=(j.steps||[]).find(s=>!s.ok);log((bad&&bad.log||j.error||"失败").split("\n").filter(Boolean).slice(-3).join(" | "),"bad");
+      // 截图失败明确提示，不转为固定原型或像素兜底。
+      toast("生成失败，看日志");return;}
+    const sm=j.summary;if(sm)log("断言 "+sm.passed+"/"+sm.total+" · "+sm.verdict,sm.hardFailed?"bad":"ok");
+    S.res=j;openRes("page");step(4);
+  }catch(e){log("请求失败："+e.message,"bad");}
+  finally{$("#bForge").disabled=false;}
+};
+function openRes(v){
+  const j=S.res;if(!j)return;$("#res").classList.add("on");
+  const bar=$("#dlBar");
+  bar.innerHTML=j.run?"<b>运行 "+esc(j.run)+"</b>"+(j.summary?" · 断言 "+esc(j.summary.passed+"/"+j.summary.total):"")+
+    " · <a href='"+(j.zip||"/api/runs/"+j.run+"/zip")+"'>下载 ZIP（交付物）</a>"+
+    (j.files||[]).filter(f=>f.deliverable).map(f=>" · <a href='"+f.download+"'>"+esc(f.name)+"</a>").join("")+
+    " · <a href='#' id='dlHis'>在产物与日志中查看</a>"+
+    ((j.ok!==false&&(j.canSaveTemplate||/^ax-/.test(j.run)))?" · <a href='#' id='dlSave'><b>存入模板库</b></a>":""):"";
+  const dh=$("#dlHis");if(dh)dh.onclick=e=>{e.preventDefault();openHis();};
+  const ds=$("#dlSave");if(ds)ds.onclick=e=>{e.preventDefault();saveTpl(j);};
+  document.querySelectorAll("#resTabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  const fr=$("#resFrame"),pre=$("#resPre");
+  if(v==="page"||v==="report"){pre.hidden=true;fr.hidden=false;fr.src=(v==="page"?j.page:j.report)||"about:blank";}
+  else{fr.hidden=true;pre.hidden=false;pre.textContent="加载中…";
+    fetch(v==="code"?j.page:j.spec).then(r=>r.text()).then(t=>pre.textContent=t);}
+}
+function closeRes(){$("#res").classList.remove("on");}
+document.querySelectorAll("#resTabs button").forEach(b=>b.onclick=()=>b.dataset.v==="close"?closeRes():openRes(b.dataset.v));
+
+/* ---------- 示例 + 初始化 ---------- */
+let sampleIdx=0;
+$("#bSample").onclick=async()=>{
+  const name=["extA","extB"][sampleIdx++%2];
+  const j=await (await fetch("/api/sample/"+name)).json();
+  S.src=j.image;await loadImage(j.image);setEx(j.extract,"内置示例 "+name);semSplit();
+};
+fetch("/api/ai/status").then(r=>r.json()).then(j=>{S.ai=j.configured;
+  $("#aiState").textContent=j.configured?"AI：已接入 "+j.model+"（超时上限 "+(j.timeout||"-")+"s）":"AI：未配置（本地拆层 + 标注可用）";
+  $("#bAI").disabled=!(j.configured&&S.img);
+  $("#bAICheck").disabled=!j.configured;
+  $("#bAI").title=j.configured?"":"设置 FORGE_AI_BASE / FORGE_AI_KEY / FORGE_AI_MODEL 后重启服务";
+  $("#bAICheck").title=j.configured?"逐步排查模型通道：DNS / 端口 / 鉴权 / 模型":"需先配置模型";
+}).catch(()=>{$("#aiState").textContent="未连接本地服务：请用 python build/studio_server.py 打开";});
+/* ---------- Axure 入口：HTML 导出目录 → 代码 ---------- */
+const axDlg=$("#axDlg");
+$("#bAxure").onclick=()=>{axDlg.classList.add("on");$("#axDir").focus();};
+$("#bAxClose").onclick=()=>axDlg.classList.remove("on");
+axDlg.addEventListener("click",e=>{if(e.target===axDlg)axDlg.classList.remove("on");});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&axDlg.classList.contains("on"))axDlg.classList.remove("on");});
+$("#bAxSample").onclick=async()=>{const j=await (await fetch("/api/axure/sample")).json();$("#axDir").value=j.dir;};
+$("#axDir").oninput=()=>{$("#axPage").innerHTML='<option value="">默认第一页（读取后可切换）</option>';};
+$("#bAxGo").onclick=async()=>{
+  const dir=$("#axDir").value.trim();if(!dir){toast("请填写导出目录");return;}
+  const btn=$("#bAxGo");btn.disabled=true;btn.textContent="读取中…";$("#axInfo").textContent="";
+  step(3);log("Axure：读标注 → 确定性生成 → 四类断言…");
+  try{
+    const r=await fetch("/api/axure",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({dir,page:$("#axPage").value,theme:$("#axTheme").value,workspace:S.ws})});
+    const j=await r.json();
+    if(j.pages&&j.pages.length){
+      const cur=(j.source&&j.source.page)||$("#axPage").value;
+      $("#axPage").innerHTML="";
+      j.pages.forEach(p=>{const o=document.createElement("option");o.value=p.name;o.textContent=p.label+"（"+p.name+"）";if(p.name===cur)o.selected=true;$("#axPage").appendChild(o);});
+    }
+    (j.steps||[]).forEach(s=>log((s.ok?"✓ ":"✗ ")+s.step,s.ok?"ok":"bad"));
+    if(!j.ok){
+      const bad=(j.steps||[]).find(s=>!s.ok);
+      const msg=j.error||((bad&&bad.log||"失败").split("\n").filter(Boolean).slice(-2).join(" | "));
+      $("#axInfo").textContent=msg;$("#axInfo").className="hint bad";log(msg,"bad");toast("导入失败，看日志");return;
+    }
+    const s=j.source;$("#axInfo").className="hint";
+    $("#axInfo").textContent="「"+s.pageName+"」· "+s.archetype+" · 字段 "+s.fields+" · 列 "+s.columns+" · 动作 "+s.actions+" · 状态 "+s.states+" · 菜单 "+s.nav+" 项";
+    const sm=j.summary;if(sm)log("断言 "+sm.passed+"/"+sm.total+" · "+sm.verdict,sm.hardFailed?"bad":"ok");
+    S.res=j;axDlg.classList.remove("on");openRes("page");step(4);
+  }catch(e){log("请求失败："+e.message,"bad");}
+  finally{btn.disabled=false;btn.textContent="读取并生成";}
+};
+/* ---------- 文件工作区 ---------- */
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const SRC={image:"截图",html:"HTML 文件夹",axure:"Axure 原型",template:"模板指令","template-custom":"自定义模板",command:"指令","web-capture":"网页采集","web-restore":"网页还原",unknown:"—"};
+const fmtSize=n=>n>1048576?(n/1048576).toFixed(1)+" MB":n>1024?Math.round(n/1024)+" KB":n+" B";
+S.ws=localStorage.getItem("forge.ws")||"default";
+async function loadWs(){
+  try{const j=await (await fetch("/api/workspaces")).json();S.wsList=j.workspaces||[];}catch(_){S.wsList=[];}
+  if(!S.wsList.some(w=>w.id===S.ws))S.ws="default";
+  const sel=$("#wsCur");sel.innerHTML="";
+  S.wsList.forEach(w=>{const o=document.createElement("option");o.value=w.id;o.textContent=w.name;sel.appendChild(o);});
+  sel.value=S.ws;
+  const hs=$("#hisWs"),hv=hs.value;hs.innerHTML='<option value="">全部工作区</option>';
+  S.wsList.forEach(w=>{const o=document.createElement("option");o.value=w.id;o.textContent=w.name;hs.appendChild(o);});hs.value=hv;
+  const tb=$("#wsBody");tb.innerHTML="";
+  S.wsList.forEach(w=>{const tr=document.createElement("tr");
+    tr.innerHTML="<td>"+esc(w.name)+(w.id===S.ws?' <span class="pill ok">当前</span>':"")+"</td><td>"+w.runs+"</td><td>"+esc(w.lastUsedAt||"—")+"</td><td></td>";
+    const td=tr.lastChild;
+    const act=(t,fn)=>{const a=document.createElement("a");a.href="#";a.textContent=t;a.onclick=e=>{e.preventDefault();fn();};td.appendChild(a);};
+    act("切换",()=>{setWs(w.id);});act("查看产物",()=>{$("#wsDlg").classList.remove("on");openHis(w.id);});
+    if(w.id!=="default"){act("重命名",async()=>{const n=prompt("新名称",w.name);if(!n)return;await post("/api/workspaces/rename",{id:w.id,name:n});loadWs();});
+      act("删除",async()=>{if(!confirm("删除工作区「"+w.name+"」及其 "+w.runs+" 次运行的全部产物？此操作不可恢复。"))return;
+        const r=await post("/api/workspaces/delete",{id:w.id});toast(r.ok?"已删除":r.error);if(S.ws===w.id)S.ws="default";loadWs();});}
+    tb.appendChild(tr);});
+}
+function setWs(id){S.ws=id;localStorage.setItem("forge.ws",id);const w=(S.wsList||[]).find(x=>x.id===id);log("当前工作区："+(w?w.name:id));loadWs();}
+async function post(u,b){try{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});return await r.json();}catch(e){return {error:e.message};}}
+$("#wsCur").onchange=e=>setWs(e.target.value);
+$("#bWs").onclick=()=>{loadWs();$("#wsDlg").classList.add("on");$("#wsNew").focus();};
+$("#bWsClose").onclick=()=>$("#wsDlg").classList.remove("on");
+$("#bWsAdd").onclick=async()=>{const n=$("#wsNew").value.trim();if(!n){toast("请填写名称");return;}
+  const r=await post("/api/workspaces/create",{name:n});if(!r.ok){toast(r.error||"新建失败");return;}
+  $("#wsNew").value="";setWs(r.id);toast("已新建并切换到「"+n+"」");};
+
+/* ---------- 产物与运行日志 ---------- */
+function openHis(ws){if(ws!=null)$("#hisWs").value=ws;$("#hisDlg").classList.add("on");loadHis();}
+let hisT=null,hisSel=new Set();
+async function loadHis(){
+  const p=new URLSearchParams();if($("#hisWs").value)p.set("workspace",$("#hisWs").value);
+  if($("#hisSt").value)p.set("status",$("#hisSt").value);if($("#hisQ").value.trim())p.set("q",$("#hisQ").value.trim());
+  const tb=$("#hisBody");tb.innerHTML='<tr><td colspan="9" class="hint">加载中…</td></tr>';
+  let runs=[];try{runs=(await (await fetch("/api/runs?"+p)).json()).runs||[];}catch(e){tb.innerHTML='<tr><td colspan="9" class="bad">加载失败：'+esc(e.message)+'</td></tr>';return;}
+  const ok=runs.filter(r=>r.ok).length;$("#hisSum").textContent="共 "+runs.length+" 次运行 · 成功 "+ok+" · 失败 "+(runs.length-ok);
+  hisSel=new Set([...hisSel].filter(id=>runs.some(r=>r.run===id)));
+  tb.innerHTML=runs.length?"":'<tr><td colspan="9" class="hint">还没有记录。生成一次页面后会出现在这里。</td></tr>';
+  runs.forEach(r=>{const tr=document.createElement("tr");const sm=r.summary;
+    const files=(r.files||[]).map(f=>'<a href="'+f.download+'" title="'+esc(f.label)+' · '+fmtSize(f.size)+'">'+esc(f.name)+'</a>').join("")||'<span class="hint">—</span>';
+    tr.innerHTML="<td><input type='checkbox' class='hisCk' data-run='"+esc(r.run)+"'></td><td style='white-space:nowrap'>"+esc(r.createdAt)+"</td><td>"+esc(r.workspaceName)+"</td><td>"+esc(SRC[r.source]||r.source)+"</td>"+
+      "<td>"+esc(r.page||"—")+(r.archetype?' <span class="hint">'+esc(r.archetype)+'</span>':"")+"</td>"+
+      "<td>"+(r.ok?'<span class="pill ok">成功</span>':'<span class="pill bad">失败</span>'+(r.failedStep?'<div class="hint" title="'+esc(r.error||"")+'">'+esc(r.failedStep)+'</div>':""))+"</td>"+
+      "<td>"+(sm?esc(sm.passed+"/"+sm.total):"—")+"</td><td>"+files+"</td><td></td>";
+    const ck=tr.querySelector(".hisCk");ck.checked=hisSel.has(r.run);
+    ck.onchange=()=>{ck.checked?hisSel.add(r.run):hisSel.delete(r.run);syncHisSel();};
+    const td=tr.lastChild;
+    if(!r.exists)td.innerHTML='<span class="hint">产物已删除</span>';
+    else{
+      if(r.ok){const a=document.createElement("a");a.href=r.zip;a.textContent="下载 ZIP";td.appendChild(a);
+        const v=document.createElement("a");v.href="#";v.textContent="打开";v.onclick=e=>{e.preventDefault();reopen(r);};td.appendChild(v);}
+      const all=document.createElement("a");all.href=r.zip+"?all=1";all.textContent="全部素材";all.title="含原始截图 / 上传文件 / 中间产物";td.appendChild(all);
+      const d=document.createElement("a");d.href="#";d.textContent="删除";d.onclick=async e=>{e.preventDefault();
+        if(!confirm("删除这次运行的全部产物？"))return;const x=await post("/api/runs/delete",{run:r.run});toast(x.ok?"已删除":x.error);hisSel.delete(r.run);loadHis();loadWs();};td.appendChild(d);}
+    tb.appendChild(tr);});
+  syncHisSel();
+}
+function syncHisSel(){
+  const cks=[...document.querySelectorAll(".hisCk")];const n=cks.length,sel=cks.filter(c=>c.checked).length;
+  const all=$("#hisSelAll");all.checked=n>0&&sel===n;all.indeterminate=sel>0&&sel<n;
+  $("#bHisDel").disabled=sel===0;$("#bHisDel").textContent="批量删除"+(sel?("（"+sel+"）"):"");
+}
+$("#hisSelAll").onchange=e=>{const on=e.target.checked;
+  document.querySelectorAll(".hisCk").forEach(c=>{c.checked=on;on?hisSel.add(c.dataset.run):hisSel.delete(c.dataset.run);});syncHisSel();};
+$("#bHisDel").onclick=async()=>{
+  const ids=[...hisSel];if(!ids.length)return;
+  if(!confirm("删除选中的 "+ids.length+" 次运行的全部产物？此操作不可恢复。"))return;
+  const x=await post("/api/runs/delete",{runs:ids});toast(x.ok?("已删除 "+x.deleted+(x.missing?("，"+x.missing+" 条不存在"):"")+" 条"):(x.error||"删除失败"));
+  hisSel.clear();loadHis();loadWs();
+};
+function reopen(r){S.res={ok:true,run:r.run,page:"/out/"+r.run+"/page.html",report:"/out/"+r.run+"/report.html",
+  spec:"/out/"+r.run+"/pagespec.json",files:r.files,zip:r.zip,summary:r.summary};
+  $("#hisDlg").classList.remove("on");openRes("page");step(4);}
+$("#bHis").onclick=()=>openHis();$("#bHisClose").onclick=()=>$("#hisDlg").classList.remove("on");
+$("#bHisReload").onclick=loadHis;$("#hisWs").onchange=loadHis;$("#hisSt").onchange=loadHis;
+$("#hisQ").oninput=()=>{clearTimeout(hisT);hisT=setTimeout(loadHis,300);};
+["hisDlg","wsDlg"].forEach(id=>{const d=$("#"+id);d.addEventListener("click",e=>{if(e.target===d)d.classList.remove("on");});});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")["hisDlg","wsDlg"].forEach(id=>$("#"+id).classList.remove("on"));});
+loadWs();
+
+/* ---------- 使用说明 ---------- */
+let guideBack=null;
+function openGuide(){guideBack=document.activeElement;$("#guide").classList.add("on");$("#bGuideClose").focus();}
+function closeGuide(){$("#guide").classList.remove("on");if(guideBack&&guideBack.focus)guideBack.focus();}
+$("#bGuide").onclick=openGuide;$("#bGuide2").onclick=openGuide;$("#bGuideClose").onclick=closeGuide;
+$("#guide").addEventListener("click",e=>{if(e.target.id==="guide")closeGuide();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#guide").classList.contains("on"))closeGuide();});
+$("#bTry").onclick=()=>{$("#theme").value="premium";$("#bSample").click();};
+/* ---------- 模板库：内置 A1–A6 + 我的模板 + 指令生成（统一入口） ---------- */
+S.tpls=[];S.tplSel=null;
+function setMode(m){
+  const lib=m==="lib",web=m==="web",design=m==="design";$("#libv").classList.toggle("on",lib);document.body.classList.toggle("m-lib",lib);document.body.classList.toggle("m-web",web);
+  $("#webv").hidden=!web;
+  [["#mLib",lib],["#mDesign",design],["#mWeb",web]].forEach(([id,on])=>{$(id).classList.toggle("on",on);$(id).setAttribute("aria-selected",on);});
+  if(lib)loadTpls();
+}
+$("#mLib").onclick=()=>setMode("lib");$("#mDesign").onclick=()=>setMode("design");
+function busy(on,t){$("#busy").classList.toggle("on",on);if(t)$("#busyT").textContent=t;}
+function tplCard(t){
+  const c=document.createElement("div");c.className="card";c.tabIndex=0;c.setAttribute("role","button");
+  c.setAttribute("aria-label",(t.kind==="builtin"?t.id+" ":"")+t.name);
+  const isFF=t.kind==="freeform";
+  const pv=t.thumb?'<img alt="" src="'+esc(t.thumb)+'">':'<iframe tabindex="-1" loading="lazy" src="'+esc(t.preview)+'" title="'+esc(t.name)+' 预览"></iframe>';
+  const tag=t.kind==="builtin"?'<span class="tag">'+esc(t.id)+'</span>'
+    :isFF?'<span class="tag ff">自由版式</span>':'<span class="tag c">'+esc(t.archetype||"自定义")+'</span>';
+  const desc=t.kind==="builtin"?esc((t.regions||[]).slice(0,4).join(" · "))+" · 断言 "+t.checks+" 项"
+    :isFF?("插槽 "+(t.slots||[]).length+" 个 · 来源 "+esc({image:"设计图",html:"HTML",axure:"Axure"}[t.source]||t.source||"自由版式"))
+    :"来源 "+esc({image:"设计图",html:"HTML",axure:"Axure"}[t.source]||t.source)+" · "+esc((t.columns||[]).slice(0,4).join("、"));
+  c.innerHTML='<div class="pv">'+pv+'</div><div class="bd"><div class="t">'+tag+esc(t.name)+'</div><div class="d">'+desc+
+    '</div><div class="ex">指令示例：'+esc(t.example)+'</div><div class="ops"><button class="btn sm p" data-a="go">用它生成</button>'+
+    '<a class="btn sm" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit" target="_blank" href="'+esc(t.preview)+'">预览</a>'+
+    ((t.kind==="custom"||isFF)?'<button class="btn sm" data-a="del">删除</button>':"")+'</div></div>';
+  const pick=()=>{S.tplSel=t;document.querySelectorAll(".card").forEach(x=>x.classList.remove("sel"));c.classList.add("sel");
+    $("#cmdIn").value=t.example;$("#cmdIn").focus();preview();};
+  c.onclick=e=>{const a=e.target.closest("[data-a]");if(e.target.closest("a"))return;
+    if(a&&a.dataset.a==="del"){e.stopPropagation();delTpl(t);return;}
+    pick();if(a&&a.dataset.a==="go")runCmd();};
+  c.onkeydown=e=>{if(e.key==="Enter"&&e.target===c)pick();};
+  return c;
+}
+async function loadTpls(){
+  try{S.tpls=(await (await fetch("/api/templates")).json()).templates||[];}catch(_){S.tpls=[];}
+  const gb=$("#gBuiltin"),gc=$("#gCustom");gb.innerHTML="";gc.innerHTML="";
+  S.tpls.filter(t=>t.kind==="builtin").forEach(t=>gb.appendChild(tplCard(t)));
+  const cs=S.tpls.filter(t=>t.kind==="custom"||t.kind==="freeform");cs.forEach(t=>gc.appendChild(tplCard(t)));
+  $("#customCnt").textContent=cs.length?cs.length+" 个 · 可在指令里写「用「模板名」生成 XX」":"还没有：从下方上传设计图 / HTML / Axure 生成后「存入模板库」";
+  if(!cs.length)gc.innerHTML='<div class="hint" style="grid-column:1/-1">暂无自定义模板</div>';
+}
+function cmdBody(){const sel=S.tplSel,cmd=$("#cmdIn").value.trim();
+  // 选中的卡片只在指令仍是它的示例、或指令没点名别的东西时生效，避免「选了 A1 却输了看板」被强制成 A1
+  const tid=sel&&(cmd===sel.example||!cmd)?sel.id:(sel&&sel.kind==="custom"&&cmd.includes(sel.name)?sel.id:null);
+  return {command:cmd||(sel&&sel.example)||"",templateId:tid,theme:$("#cmdTheme").value,workspace:S.ws};}
+async function preview(){
+  const b=cmdBody();if(!b.command){$("#parsed").textContent="请输入指令";return null;}
+  const r=await post("/api/parse",b);
+  if(r.error){$("#parsed").innerHTML='<span class="w">'+esc(r.error)+'</span>';return null;}
+  const p=r.parsed||{};
+  $("#parsed").innerHTML="将使用 <b>"+esc(p.template)+"</b> · 页面 <b>"+esc(p.page)+"</b> · 业务对象 <b>"+esc(p.entity||"-")+"</b>"+
+    (p.recipe?" · 配方 "+esc(p.recipe):"")+((p.fields||[]).length?" · 字段 "+esc(p.fields.join("、")):"")+
+    (r.notes||[]).map(n=>' · <span class="w">'+esc(n)+"</span>").join("");
+  return r;
+}
+async function runCmd(){
+  const b=cmdBody();if(!b.command){toast("请输入指令");return;}
+  busy(true,"生成中：指令解析 → 确定性生成 → 四类断言…");
+  try{const j=await post("/api/forge/command",b);
+    if(j.error&&!j.steps){$("#parsed").innerHTML='<span class="w">'+esc(j.error)+"</span>";toast(j.error);return;}
+    (j.steps||[]).forEach(s=>log((s.ok?"✓ ":"✗ ")+s.step,s.ok?"ok":"bad"));
+    const sm=j.summary;if(sm)log("断言 "+sm.passed+"/"+sm.total+" · "+sm.verdict,sm.hardFailed?"bad":"ok");
+    if(!j.ok){
+      const bad=(j.steps||[]).find(s=>!s.ok);
+      const message=j.error||(j.generated?"页面已生成，验收未通过":"生成失败")+(bad?"："+bad.step:"");
+      $("parsed").textContent=message;
+      if(j.page||j.report){S.res=j;setMode("design");openRes(j.report?"report":"page");}
+      toast(message);return;
+    }
+    S.res=j;setMode("design");openRes("page");step(4);
+  }finally{busy(false);}
+}
+$("#bParse").onclick=preview;$("#bCmd").onclick=runCmd;
+$("#cmdIn").onkeydown=e=>{if(e.key==="Enter")runCmd();};
+let _pt;$("#cmdIn").oninput=()=>{clearTimeout(_pt);_pt=setTimeout(preview,350);};
+async function saveTpl(j){
+  const def=(j.pageName||(j.source&&j.source.pageName)||"自定义模板").replace(/(管理|详情|看板)$/,"")+"模板";
+  const name=prompt("模板名称（之后可在指令里写「用「名称」生成 XX」）",def);if(!name)return;
+  const r=await post("/api/templates/save",{run:j.run,name});
+  if(!r.ok){toast(r.error||"保存失败");return;}
+  toast("已存入模板库：「"+r.name+"」");log("模板库 +「"+r.name+"」","ok");loadTpls();
+}
+async function delTpl(t){
+  if(!confirm("删除自定义模板「"+t.name+"」？内置模板不受影响"))return;
+  const r=await post("/api/templates/delete",{id:t.id});toast(r.ok?"已删除":(r.error||"删除失败"));loadTpls();
+}
+/* 新建自定义模板的三个素材入口 */
+$("#libImg").onchange=e=>{const f=e.target.files[0];if(!f)return;setMode("design");readFile(f);e.target.value="";};
+$("#libImgDemo").onclick=()=>{setMode("design");$("#bSample").click();};
+$("#libAxure").onclick=()=>{setMode("design");$("#bAxure").click();};
+async function uploadHtml(fileList){
+  const fs=[...fileList].filter(f=>/\.(html?|vue|jsx|tsx|js|ts|css)$/i.test(f.name)&&f.size<2*1024*1024).slice(0,400);
+  if(!fs.length){toast("没有可解析的文件（.html/.vue/.jsx/.tsx）");return;}
+  busy(true,"反向工程 "+fs.length+" 个文件 → 生成 → 四类断言…");
+  try{
+    const files=await Promise.all(fs.map(async f=>({path:f.webkitRelativePath||f.name,text:await f.text()})));
+    const j=await post("/api/forge/html",{files,rename:$("#libRename").value.trim(),theme:$("#cmdTheme").value,workspace:S.ws});
+    (j.steps||[]).forEach(s=>log((s.ok?"✓ ":"✗ ")+s.step,s.ok?"ok":"bad"));
+    if(!j.ok){const bad=(j.steps||[]).find(s=>!s.ok);
+      if(bad)log((bad.log||"").split("\n").filter(Boolean).slice(-2).join(" | "),"bad");
+      // 自由版式兜底：没有表格/表单也能按任意版式生成（复用上传的 HTML 文件）
+      if(window.__ff_convert&&confirm("这些页面没有表格/表单，无法按 A1–A6 生成。\n是否转为「自由版式模板」？（任意版式都能生成，之后可像内置模板一样用指令复用）")){
+        window.__ff_convert({files:files,name:$("#libRename").value.trim()});return;}
+      toast(j.error||"生成失败，看日志");return;}
+    const sm=j.summary;if(sm)log("断言 "+sm.passed+"/"+sm.total+" · "+sm.verdict,sm.hardFailed?"bad":"ok");
+    S.res=j;setMode("design");openRes("page");step(4);toast("生成完成，可点结果栏「存入模板库」");
+  }finally{busy(false);}
+}
+$("#libHtml").onchange=e=>{uploadHtml(e.target.files);e.target.value="";};
+$("#libDir").onchange=e=>{uploadHtml(e.target.files);e.target.value="";};
+const qMode=new URLSearchParams(location.search);
+setMode(qMode.has("demo")||qMode.has("guide")||qMode.get("view")==="design"?"design":"lib");
+window.__studio=S; // 供自动化验证读取状态
+// ?demo=extA|extB|extC → 自动载入示例并语义拆层（演示 / 无头验证用）
+const demo=new URLSearchParams(location.search).get("demo");
+if(demo&&["extA","extB","extC"].includes(demo)){
+  (async()=>{try{const j=await (await fetch("/api/sample/"+demo)).json();
+    S.src=j.image;await loadImage(j.image);setEx(j.extract,"内置示例 "+demo);semSplit();}
+  catch(e){log("载入示例失败："+e.message,"bad");}})();
+}
+if(new URLSearchParams(location.search).has("guide"))openGuide(); // ?guide 直接打开说明
+</script>
+<script src="/studio/ext-freeform.js"></script>
+<script src="/studio/web-capture.js"></script>
+</body>
+</html>

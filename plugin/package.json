@@ -1,0 +1,58 @@
+{
+  "name": "dsh-erp-page-forge",
+  "version": "1.8.0",
+  "description": "ERP 通用页面铸造器：把高频 ERP 页面（列表、表单、详情、看板、审批、对账）的骨架与字段配方固化成可复制的生成能力",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "engine",
+    "cordis.patch.yml"
+  ],
+  "engines": {
+    "dsh": ">=0.2.2-rc.1 <1.0.0"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-tools": "*",
+    "@deepseek-ai/schemastery": "*",
+    "@deepseek-ai/dsh-llm": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-client.mjs && node scripts/copy-engine.mjs",
+    "prepack": "node scripts/prepare-pack.mjs",
+    "pack:release": "node scripts/pack-plugin.mjs"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ],
+      "external": [
+        "react"
+      ]
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "keywords": [
+    "dsh-plugin",
+    "erp",
+    "page-generator",
+    "code-generation",
+    "lowcode"
+  ],
+  "license": "UNLICENSED"
+}

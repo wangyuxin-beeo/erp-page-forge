@@ -1,0 +1,7 @@
+# 安装进 profile 后生效的层。按包名引用，让 Node 解析到已安装的代码。
+# config 会被整行替换而不是深度合并，所以需要固定的键都要写在这里。
+- insert:
+    - id: erp-page-forge
+      name: dsh-erp-page-forge
+      config:
+        timeoutSec: 300

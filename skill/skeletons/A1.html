@@ -1,0 +1,201 @@
+<!-- ================= A1 · 管理列表页（骨架） =================
+     区块顺序固定：页面头 → 查询区 → 工具条 → 数据表格 → 分页器（ERP 用户靠肌肉记忆操作，不可调换）
+     占位符由 build/forge.py 填充；交互逻辑是数据驱动的，不随实体变化。
+-->
+<div class="page-head">
+  <div>
+    <h1>{{PAGE_NAME}}</h1>
+    <div class="sub" id="pageSub">{{PAGE_SUB}}</div>
+  </div>
+  <div class="head-actions">{{HEAD_ACTIONS}}</div>
+</div>
+
+<div class="card">
+  <div class="filter" id="queryBox">{{QUERY_FIELDS}}</div>
+  <div class="filter-act">
+    <button class="btn btn-p" id="__query">查询</button>
+    <button class="btn" id="__reset">重置</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="toolbar" id="toolbar">
+    <div class="sel">已选 <b id="selCount">0</b> 项<span class="muted" style="margin-left:8px">勾选后可批量操作</span></div>
+    <div style="margin-left:auto;display:flex;gap:8px">{{BULK_ACTIONS}}</div>
+  </div>
+  <div class="tbl-wrap">
+    <table id="mainTable">
+      <thead><tr>{{TABLE_HEAD}}</tr></thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>{{TABLE_FOOT}}</tfoot>
+    </table>
+  </div>
+  <div class="pager" id="pager"></div>
+</div>
+
+<script>
+(function () {
+  var M = window.__MODEL__;
+  var tb = F.$('#tbody');
+  var list;
+
+  function sumOf(rows) {
+    if (!M.sumKey) { return null; }
+    return rows.reduce(function (s, r) { return s + (Number(r[M.sumKey]) || 0); }, 0);
+  }
+
+  function bindRows() {
+    F.$$('[data-pick]', tb).forEach(function (c) {
+      c.onclick = function () {
+        var id = c.getAttribute('data-pick');
+        if (c.checked) { list.state.selected[id] = true; } else { delete list.state.selected[id]; }
+        list.render();
+      };
+    });
+    F.$$('[data-act]', tb).forEach(function (b) {
+      b.onclick = function () { doRow(b.getAttribute('data-act'), b.getAttribute('data-row')); };
+    });
+    F.$$('.code', tb).forEach(function (c) {
+      c.onclick = function () {
+        var r = byId(c.getAttribute('data-id'));
+        if (r) { showDetail(r); }
+      };
+    });
+  }
+
+  function byId(id) {
+    var hit = null;
+    M.rows.forEach(function (r) { if (r.__id === id) { hit = r; } });
+    return hit;
+  }
+
+  function showDetail(r) {
+    var kv = M.detailFields.map(function (f) {
+      var v = r[f.key];
+      if (f.type === 'money') { v = F.money(v); }
+      else if (f.type === 'number') { v = F.num(v, f.precision || 0) + (f.unit ? ' ' + f.unit : ''); }
+      else if (v === undefined || v === null || v === '') { v = '—'; }
+      return '<div><div class="kv-label">' + f.name + '</div><div class="kv-value">' + v + '</div></div>';
+    }).join('');
+    F.drawer('详情 · ' + r[M.codeKey], '<div class="kv-grid">' + kv + '</div>' +
+      '<p class="muted" style="margin-top:16px">抽屉内为 A3 主数据详情的简化版；真实项目中此处接完整详情页。</p>');
+  }
+
+  function doRow(act, id) {
+    var r = byId(id);
+    if (!r) { return; }
+    var def = null;
+    M.actionDefs.forEach(function (d) { if (d.act === act) { def = d; } });
+    if (act === 'detail') { showDetail(r); return; }
+    if (act === 'delete') {
+      F.modal({ title: '删除确认', note: '将删除 ' + r[M.codeKey] + '，删除后不可恢复。', confirmText: '确认删除', danger: true })
+        .then(function (v) {
+          if (!v) { return; }
+          F.toast('已删除（演示）');
+        });
+      return;
+    }
+    if (def && def.to) {
+      r.status = def.to;
+      r.statusTone = M.toneOf[def.to] || 'neutral';
+      list.render();
+      F.toast('「' + r[M.codeKey] + '」' + act + '成功，状态已变为「' + def.to + '」');
+    } else {
+      F.toast(act + '（演示）');
+    }
+  }
+
+  list = F.list({
+    rows: M.rows,
+    columns: M.columns,
+    defaultSort: M.defaultSort,
+    defaultDir: M.defaultDir,
+    host: { tbody: tb, table: F.$('#mainTable'), pager: F.$('#pager'), toolbar: F.$('#toolbar'), selCount: F.$('#selCount') },
+    after: function (state, st) {
+      F.$('#pageSub').innerHTML = '共 <b>' + st.total + '</b> 条 · 数据截止 ' + M.asOf + ' · 金额口径为含税金额';
+      var sum = sumOf(M.rows.filter(function (r) {
+        return Object.keys(state.q).every(function (k) {
+          var v = state.q[k];
+          return !v || String(r[k] === undefined ? '' : r[k]).toLowerCase().indexOf(String(v).toLowerCase()) >= 0;
+        });
+      }));
+      if (sum !== null) {
+        var el = F.$('#sumAmt'), cnt = F.$('#sumCount');
+        if (el) { el.textContent = F.money(sum); }
+        if (cnt) { cnt.textContent = st.total; }
+      }
+      bindRows();
+    },
+    rowHtml: function (r, state) {
+      return '<tr class="' + (state.selected[r.__id] ? 'sel' : '') + '">' +
+        '<td class="c"><input type="checkbox" class="chk" data-pick="' + r.__id + '"' +
+        (state.selected[r.__id] ? ' checked' : '') + '></td>' +
+        F.cells(r, M.columns).replace(/class="code"/g, 'class="code" data-id="' + r.__id + '"') +
+        '<td class="c">' + F.actions(r, M.actionDefs, 'data-row', r.__id) + '</td>' +
+        '</tr>';
+    }
+  });
+
+  /* 全选 / 半选 */
+  var allBox = F.$('#all');
+  if (allBox) {
+    allBox.onclick = function () {
+      F.$$('[data-pick]', tb).forEach(function (c) {
+        c.checked = allBox.checked;
+        var id = c.getAttribute('data-pick');
+        if (allBox.checked) { list.state.selected[id] = true; } else { delete list.state.selected[id]; }
+      });
+      list.render();
+    };
+  }
+
+  /* 查询 / 重置 */
+  F.$('#__query').onclick = function () {
+    F.$$('[data-q]', F.$('#queryBox')).forEach(function (el) {
+      list.setQuery(el.getAttribute('data-q'), el.value);
+    });
+    // 日期区间：起止各存一个键（字段$from / 字段$to），过滤时按上下界比较
+    F.$$('[data-qfrom]', F.$('#queryBox')).forEach(function (el) {
+      list.setQuery(el.getAttribute('data-qfrom') + '$from', el.value);
+    });
+    F.$$('[data-qto]', F.$('#queryBox')).forEach(function (el) {
+      list.setQuery(el.getAttribute('data-qto') + '$to', el.value);
+    });
+    list.render();
+    F.toast('已按条件查询');
+  };
+  F.$('#__reset').onclick = function () {
+    F.$$('[data-q], [data-qfrom], [data-qto]', F.$('#queryBox')).forEach(function (el) { el.value = ''; });
+    if (allBox) { allBox.checked = false; }
+    list.clearQuery();
+    list.clearSelected();
+    list.render();
+    F.toast('筛选条件已重置');
+  };
+
+  /* 批量动作 */
+  F.$$('[data-bulk]').forEach(function (b) {
+    b.onclick = function () {
+      var ids = list.selected();
+      if (!ids.length) { F.toast('请先勾选要操作的记录'); return; }
+      F.modal({
+        title: b.textContent.trim() + '确认',
+        note: '将对已选中的 ' + ids.length + ' 条记录执行该操作。',
+        confirmText: '确认执行'
+      }).then(function (v) {
+        if (!v) { return; }
+        ids.forEach(function (id) {
+          var r = byId(id);
+          if (r && b.getAttribute('data-to')) { r.status = b.getAttribute('data-to'); r.statusTone = M.toneOf[r.status] || 'neutral'; }
+        });
+        list.clearSelected();
+        if (allBox) { allBox.checked = false; }
+        list.render();
+        F.toast('已对 ' + ids.length + ' 条记录执行「' + b.textContent.trim() + '」');
+      });
+    };
+  });
+
+  list.render();
+})();
+</script>

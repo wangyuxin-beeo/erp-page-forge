@@ -1,0 +1,111 @@
+{
+  "specVersion": "1.0",
+  "_note": "示例 PageSpec：真实项目 A（React 19 + RTK + CRA）里已落地的 A5 页面。阶段一用它做端到端验证，同时充当「反向工程」入口的样例——想再做一个审批页，改这份的 fields 即可。",
+
+  "page": {
+    "name": "许可证变更审批",
+    "module": "证照管理",
+    "menu": "变更审批",
+    "breadcrumb": ["证照管理", "变更审批", "许可证变更审批"]
+  },
+
+  "archetype": "A5",
+  "extends": [],
+
+  "entity": {
+    "name": "许可证变更申请",
+    "recipeRef": "通用字段骨架（证照类扩展）",
+    "codeRule": "LIC-年份-序号"
+  },
+
+  "fields": [
+    { "name": "许可证类型", "type": "enum", "required": true, "control": "select",
+      "options": ["Z39", "Z15", "Z89"], "provenance": "user",
+      "note": "三选一下拉，业务上对应不同监管口径" },
+    { "name": "许可证号", "type": "code", "required": true, "unique": true, "provenance": "user" },
+    { "name": "工厂", "type": "text", "required": true, "provenance": "user" },
+    { "name": "类别", "type": "text", "provenance": "user" },
+    { "name": "功能位置", "type": "text", "provenance": "user" },
+    { "name": "修改内容", "type": "textarea", "provenance": "user" },
+    { "name": "修改节点", "type": "enum", "provenance": "inferred",
+      "options": ["申请人提交", "部门经理审核", "安全环保部复核", "生产总监批准", "归档生效"],
+      "note": "推断自 A5 原型默认节点流，用户可改" },
+    { "name": "申请人", "type": "person", "provenance": "recipe" },
+    { "name": "提交时间", "type": "datetime", "provenance": "recipe" },
+    { "name": "紧急程度", "type": "enum", "options": ["普通", "紧急"], "provenance": "recipe" }
+  ],
+
+  "actions": [
+    { "name": "同意", "scope": "panel-footer", "primary": true, "confirm": false,
+      "allowedStates": ["待审批"], "note": "同意即本节点办结，任务移出待办" },
+    { "name": "驳回", "scope": "panel-footer", "confirm": true,
+      "allowedStates": ["待审批"],
+      "requiresInput": { "field": "审批意见", "required": true, "prompt": "请填写驳回原因" } },
+    { "name": "转办", "scope": "panel-footer",
+      "allowedStates": ["待审批"],
+      "requiresInput": { "field": "接收人", "required": true, "prompt": "请选择转办接收人" } }
+  ],
+
+  "statusMachine": {
+    "states": [
+      { "name": "待审批", "tone": "warn" },
+      { "name": "流转中", "tone": "brand", "intermediate": true, "note": "已办结本节点并进入下一节点，不再属于我的收件箱；中间态，初始数据不覆盖属正常" },
+      { "name": "已通过", "tone": "ok", "terminal": true },
+      { "name": "已驳回", "tone": "danger", "terminal": true },
+      { "name": "已转办", "tone": "purple", "terminal": true }
+    ],
+    "initial": "待审批",
+    "transitions": [
+      { "from": "待审批", "to": "流转中", "action": "同意" },
+      { "from": "待审批", "to": "已通过", "action": "同意" },
+      { "from": "待审批", "to": "已驳回", "action": "驳回" },
+      { "from": "待审批", "to": "已转办", "action": "转办" }
+    ],
+    "nodeFlow": ["申请人提交", "部门经理审核", "安全环保部复核", "生产总监批准", "归档生效"]
+  },
+
+  "permissions": [
+    { "rule": "提交人不可自审", "effect": "本人提交的单据隐藏同意/驳回/转办按钮" },
+    { "rule": "驳回必须填写原因", "effect": "意见为空时阻止提交并红字提示" },
+    { "rule": "任何审批动作不得自动提交", "effect": "所有动作需人工点击确认" }
+  ],
+
+  "data": {
+    "minRows": 6,
+    "currency": "¥",
+    "dateFormat": "YYYY-MM-DD",
+    "mustHaveException": true,
+    "disclaimer": "演示用虚构数据，与任何真实企业无关"
+  },
+
+  "stack": {
+    "target": "react",
+    "projectRoot": "./example-project",
+    "profile": {
+      "framework": "React 19",
+      "language": "js",
+      "stateManagement": "Redux Toolkit",
+      "routing": "react-router-dom",
+      "styling": "css",
+      "alias": "@",
+      "verifyCommand": "npx react-scripts build"
+    }
+  },
+
+  "interactionHints": {
+    "_note": "产物类名锚点。有了它，交互/数据断言从「猜」变成「可判定」；没写则退回通用启发式，猜不中会诚实地标 unsupported。",
+    "taskCard": ".ap-task-line",
+    "detailAnchor": ".ap-detail-title",
+    "todoBadge": ".ap-tab",
+    "dialog": ".ap-modal",
+    "dialogInput": ".ap-modal-body textarea, .ap-modal-body input, .ap-modal-body select"
+  },
+
+  "tokens": {
+    "mode": "inherit-project",
+    "sourceFile": "src/styles/tokens.css",
+    "note": "项目自带令牌优先，产物零 Skill 原色值残留"
+  },
+
+  "custom": []
+}

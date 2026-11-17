@@ -1,0 +1,41 @@
+{
+  "specVersion": "1.0",
+  "meta": {
+    "purpose": "主题预设：同一份 PageSpec 一键切换视觉质感。只改「视觉令牌层」+ 一层覆盖 CSS，业务规范层与防坑规则层不动。",
+    "rule": "default = Skill 默认令牌；premium = 参考 Dribbble 上 SaaS 后台高赞作品提炼的通用设计语言（不复刻任何具体作品）。项目已有令牌时仍以项目为准，主题不得覆盖。",
+    "keepBrand": "spec.tokens 里截图量到的 brand 主色在 premium 下保留（品牌识别度不丢），其余令牌按主题走。"
+  },
+  "themes": {
+    "default": {"name": "标准后台", "css": null, "tokens": null},
+    "premium": {
+      "name": "高级感 · Dribbble 风格",
+      "principles": [
+        "浅色侧栏 + 白卡片：去掉大面积深色，用留白和层级分区",
+        "柔和双层阴影代替硬边框：近处 1px 描边 + 远处大半径弱投影",
+        "大圆角（卡片 14px / 控件 9px）+ 胶囊式选中态",
+        "间距节奏放大一档（内容区 24/28px），表头去底色，只留细分割线",
+        "字重层级拉开：标题 600 / 22px，弱化文字更淡，数字等宽"
+      ],
+      "css": "theme-premium.css",
+      "tokens": {
+        "mode": "inherit-visual",
+        "values": {
+          "color": {
+            "brand": "#5B5BD6", "brandSoft": "#EFEFFC", "brandDark": "#4747B8",
+            "success": "#17A673", "warning": "#D98A0B", "danger": "#E2445C", "purple": "#8B5CF6",
+            "pageBg": "#F6F6FA", "card": "#FFFFFF", "line": "#EDEDF3", "lineStrong": "#DFDFE8",
+            "text1": "#16161F", "text2": "#5B5B72", "text3": "#9A9AB0",
+            "sidebar": "#FBFBFD", "sidebarHover": "#F1F1F7", "sidebarActive": "#EFEFFC",
+            "sidebarText": "#5B5B72", "sidebarTextStrong": "#16161F", "sidebarTextDim": "#A3A3B8",
+            "sidebarBorder": "#EDEDF3"
+          },
+          "radius": {"card": "14px", "input": "9px"},
+          "shadow": {"card": "0 1px 2px rgba(22,22,40,.04), 0 10px 28px -14px rgba(22,22,40,.14)"},
+          "font": {"title": "22px"},
+          "space": {"contentPadding": "22px 24px 36px"},
+          "layout": {"sidebarWidth": "232px", "topbarHeight": "64px"}
+        }
+      }
+    }
+  }
+}

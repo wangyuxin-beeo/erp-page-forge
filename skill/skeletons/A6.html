@@ -1,0 +1,108 @@
+<!-- ================= A6 · 台账 / 对账页（骨架） =================
+     区块顺序固定：页面头（导出/打印）→ 条件条（往来单位 + 期间）→ 资金摘要 → 明细台账 → 固定汇总行 → 差异说明
+     铁律：余额列逐行累加（期初 + 应收 − 已收），不是区间值；汇总 = 明细逐行之和；
+          切换期间摘要与明细同步刷新；有差异的行标红并提示人工复核；打印时隐藏侧栏与按钮。
+-->
+<div class="page-head">
+  <div>
+    <h1>{{PAGE_NAME}}</h1>
+    <div class="sub" id="pageSub">{{PAGE_SUB}}</div>
+  </div>
+  <div class="head-actions">
+    <button class="btn" data-head="导出" id="__export">导出</button>
+    <button class="btn" data-head="打印" id="__print">打印</button>
+    <button class="btn btn-p" id="__confirm">确认对账</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="condbar">
+    <div class="fld"><label>{{PARTNER_LABEL}}</label><select id="partner">{{PARTNER_OPTIONS}}</select></div>
+    <div class="fld"><label>对账期间</label><select id="period">{{PERIOD_OPTIONS}}</select></div>
+    <div class="muted" style="padding-bottom:7px">余额 = 期初余额 + 累计应收 − 累计已收（逐行累加）</div>
+  </div>
+</div>
+
+<div class="kpis" id="sumCards" style="margin-top:14px"></div>
+
+<div class="card" style="margin-top:14px">
+  <div class="card-h">明细台账<span class="right muted" id="lineCount"></span></div>
+  <div class="opening" id="opening"></div>
+  <div class="tbl-wrap">
+    <table id="ledger">
+      <thead><tr>{{LEDGER_HEAD}}</tr></thead>
+      <tbody id="ledgerBody"></tbody>
+      <tfoot><tr id="sumRow"></tr></tfoot>
+    </table>
+  </div>
+  <div id="diffNote"></div>
+</div>
+
+<script>
+(function () {
+  var M = window.__MODEL__;
+  var pSel = F.$('#period'), cSel = F.$('#partner');
+
+  function key() { return cSel.value + '|' + pSel.value; }
+
+  function render() {
+    var S = M.sets[key()];
+    var bal = S.opening, sumR = 0, sumP = 0;
+    var rows = S.lines.map(function (l) {
+      bal = Math.round((bal + l.receivable - l.received) * 100) / 100;
+      sumR += l.receivable; sumP += l.received;
+      return '<tr class="' + (l.diff ? 'diff-row' : '') + '">' +
+        '<td class="c">' + l.date + '</td><td><span class="code">' + l.code + '</span></td>' +
+        '<td>' + l.memo + (l.diff ? ' <span class="tag t-dg"><i></i>差异 ' + F.money(l.diff) + '</span>' : '') + '</td>' +
+        '<td class="r num">' + F.money(l.receivable) + '</td><td class="r num">' + F.money(l.received) + '</td>' +
+        '<td class="r num">' + F.money(bal) + '</td></tr>';
+    });
+    F.$('#ledgerBody').innerHTML = rows.length ? rows.join('') :
+      '<tr><td colspan="6"><div class="empty">本期间暂无数据</div></td></tr>';
+    F.$('#sumRow').innerHTML = '<td colspan="3" class="r">本期合计（' + S.lines.length + ' 笔）</td>' +
+      '<td class="r num">' + F.money(sumR) + '</td><td class="r num">' + F.money(sumP) + '</td>' +
+      '<td class="r num">' + F.money(bal) + '</td>';
+    F.$('#opening').innerHTML = '期初余额 <b class="num">' + F.money(S.opening) + '</b> · 对方确认余额 <b class="num">' +
+      F.money(S.partnerBalance) + '</b>';
+    F.$('#lineCount').textContent = '共 ' + S.lines.length + ' 笔';
+
+    var diffAmt = Math.round((bal - S.partnerBalance) * 100) / 100;
+    var cards = [
+      { t: '期初余额', v: S.opening }, { t: '本期应收', v: sumR }, { t: '本期已收', v: sumP },
+      { t: '期末余额', v: bal }, { t: '差异金额', v: diffAmt, dg: diffAmt !== 0 }
+    ];
+    F.$('#sumCards').innerHTML = cards.map(function (c) {
+      return '<div class="kpi"><div class="t">' + c.t + '</div><div class="v' + (c.dg ? ' amt-dg' : '') + '">' + F.money(c.v) + '</div>' +
+        '<div class="bar" style="background:' + (c.dg ? 'var(--danger)' : 'var(--brand)') + '"></div></div>';
+    }).join('');
+
+    var st = S.status;
+    F.$('#diffNote').innerHTML = diffAmt !== 0
+      ? '<div class="note-dg">账面期末余额与对方确认余额存在差异 <b>' + F.money(diffAmt) + '</b>，已标红 ' +
+        S.lines.filter(function (l) { return l.diff; }).length + ' 笔，请人工复核后再确认对账。</div>'
+      : '<div class="notice-bar" style="margin:14px 18px">账实一致，可确认对账。</div>';
+    F.$('#pageSub').innerHTML = cSel.value + ' · ' + pSel.value + ' · 状态 ' + F.tag(st, M.toneOf[st] || 'neutral');
+    S._diff = diffAmt;
+  }
+
+  F.$('#__confirm').onclick = function () {
+    var S = M.sets[key()];
+    if (S.status === '已确认') { F.toast('本期已确认，无需重复操作'); return; }
+    if (S._diff !== 0) {
+      F.modal({ title: '存在差异，需人工复核', note: '差异金额 ' + F.money(S._diff) + '。请填写复核说明后标记差异。',
+        fields: [{ key: 'memo', label: '复核说明', type: 'textarea', required: true, placeholder: '如：在途款项、发票未达等' }],
+        confirmText: '标记差异', danger: true })
+        .then(function (v) { if (!v) { return; } S.status = '有差异'; render(); F.toast('已标记差异，转人工复核'); });
+      return;
+    }
+    F.modal({ title: '确认对账', note: '确认后本期对账单锁定，不可再修改。', confirmText: '确认' })
+      .then(function (v) { if (!v) { return; } S.status = '已确认'; render(); F.toast('对账已确认'); });
+  };
+  F.$('#__export').onclick = function () { F.toast('已导出 ' + pSel.value + ' 对账单（演示）'); };
+  F.$('#__print').onclick = function () { w.print(); };
+  var w = window;
+  pSel.onchange = render;
+  cSel.onchange = render;
+  render();
+})();
+</script>

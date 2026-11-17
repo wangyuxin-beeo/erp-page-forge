@@ -1,0 +1,405 @@
+{
+  "specVersion": "1.0",
+  "title": "ui-taxonomy",
+  "meta": {
+    "purpose": "设计规范层术语词库 —— 统一「这块区域叫什么」。让拆层标注、PageSpec、产物类名、评审用语四者说的是同一个词。",
+    "layer": "第 ① 层：设计规范层。与具体组件库无关 —— 采用 Ant Design 的分类与命名，与 Arco Design / Element Plus 高度一致，故换库不失效。",
+    "scope": "只收本 Skill 生成范围内会出现的术语（ERP 后台 + 截图可识别元素）；不是组件库全量文档。",
+    "sources": {
+      "ant": "Ant Design —— 导航与通用组件分类的行业事实标准，本表术语以此为准",
+      "arco": "Arco Design —— 分类与 Ant 高度相似，用于交叉核对",
+      "element": "Element Plus —— Vue 生态对照",
+      "article": "前端 UI 组件术语科普 —— 通俗定义来源",
+      "supplement": "工程补充 —— 上述来源未覆盖，但本项目必须表达的形态（多为「行为修饰」）"
+    },
+    "usage": [
+      "① 拆层标注：给用户看「系统建议 + 依据」，用户只判断对不对（见 studio/semantic.js）",
+      "② 写 PageSpec：terminology 的 component 字段对齐 spec/components.json 的组件 id",
+      "③ 评审沟通：统一用 term（英文）与 zh（中文）"
+    ],
+    "evidence_rule": "evidence 是「可验证的像素 / 几何依据」——只有能从截图看出来的术语才写。它为未来把人工标注替成自动推断预留：没有证据的推断等于编造，禁止填入。"
+  },
+
+  "families": {
+    "navigation": {
+      "label": "导航",
+      "note": "回答「我在哪、能去哪」。Ant 的导航分类：Breadcrumb / Dropdown / Menu / Pagination / Steps / Anchor。",
+      "terms": [
+        {
+          "id": "navbar", "term": "Navbar / Header", "zh": "顶部导航栏", "component": "nav-top",
+          "spec": "page.nav", "source": "ant",
+          "definition": "页面顶部的全局导航条，放品牌、主导航、全局操作与用户区。",
+          "evidence": "内容区顶部通栏 · 高 40–64px · 底色与页面底不同 · ≥3 个水平排列的文字项或图标"
+        },
+        {
+          "id": "sidebar", "term": "Sidebar", "zh": "侧边栏", "component": "nav-side",
+          "spec": "page.nav", "source": "article",
+          "definition": "位于页面侧边（ERP 惯例在左）的纵向导航容器，承载多级菜单。",
+          "evidence": "左缘贯通全高 · 宽 180–280px · 底色与主区色差 ≥8 · 内含纵向排列的文字项"
+        },
+        {
+          "id": "menu", "term": "Menu", "zh": "导航菜单", "component": "nav-side",
+          "spec": "page.nav.items", "source": "ant",
+          "definition": "导航项的集合，支持分组、多级展开与选中态。ERP 侧栏通常是分组菜单。",
+          "evidence": "分组标题字号更小、对比更低 · 选中项有底色块或左侧色条 · 同级项左对齐等间距"
+        },
+        {
+          "id": "breadcrumb", "term": "Breadcrumb", "zh": "面包屑", "component": "breadcrumb",
+          "spec": "page.breadcrumb", "source": "ant",
+          "definition": "显示当前页面在系统层级结构中的位置，并能向上返回。",
+          "evidence": "一行 2–4 个短文本 + 分隔符（/ > ‹）· 字号小于正文 · 对比度低于正文 · 位于页面标题上方"
+        },
+        {
+          "id": "dropdown", "term": "Dropdown", "zh": "下拉菜单", "component": "dropdown",
+          "spec": "-", "source": "ant",
+          "definition": "向下弹出的命令集合，由触发元素唤起，关闭后不占位。",
+          "evidence": "通常看不到（收起态）· 若展开：浮层 + 阴影 · 项高 ≥28px · 可含分隔线与禁用项"
+        },
+        {
+          "id": "pagination", "term": "Pagination", "zh": "分页", "component": "pagination",
+          "spec": "data.minRows", "source": "ant",
+          "definition": "数据量超过一屏时分批呈现，含页码、上一页/下一页与总数。",
+          "evidence": "一行居右 · 含连续数字页码 + 上一页/下一页 · 有数字输入框或「共 N 条」文案 · 高 28–36px"
+        },
+        {
+          "id": "steps", "term": "Steps", "zh": "步骤条", "component": "steps",
+          "spec": "statusMachine.nodeFlow", "source": "ant",
+          "definition": "把长流程拆成有序步骤，显示当前进度与已完成状态。",
+          "evidence": "≥3 组「圆点或数字 + 文字」水平等距排列 · 可能有连接线 · 当前步圆点为实心主题色"
+        },
+        {
+          "id": "anchor", "term": "Anchor", "zh": "锚点", "component": "anchor",
+          "spec": "-", "source": "ant",
+          "definition": "在当前页内做位置跳转，点击滚动到对应区块。长表单/长详情页用。",
+          "evidence": "贴在内容一侧的窄纵向列表 · 每项对应正文一个标题 · 滚动时高亮项跟着变"
+        },
+        {
+          "id": "tabs", "term": "Tabs", "zh": "标签页", "component": "tabs",
+          "spec": "extends", "source": "ant",
+          "definition": "在同一区域内平级切换多组内容，不跳页面。",
+          "evidence": "一行 3–8 项 · 选中项底部有 2–3px 高亮下划线或反白块 · 项间等距"
+        },
+        {
+          "id": "page-header", "term": "PageHeader", "zh": "页头", "component": "page-header",
+          "spec": "page", "source": "ant",
+          "definition": "页面级标题区，含标题、面包屑与页面级操作，回答「这是哪一页」。",
+          "evidence": "最大字号文本 · 下方紧邻面包屑或副标题 · 右侧可能有页面级按钮组"
+        },
+        {
+          "id": "back-bar", "term": "BackBar", "zh": "返回栏", "component": "page-header",
+          "spec": "page", "source": "supplement",
+          "definition": "以返回动作开头的标题栏，用于详情页等需要回退的场景。",
+          "evidence": "最左为 ‹ 或「返回」字样 + 页面标题 · 无其他导航项"
+        },
+        {
+          "id": "footer", "term": "Footer", "zh": "页脚", "component": "page-footer",
+          "spec": "-", "source": "article",
+          "definition": "页面底部的全局信息区，放版权、版本、备案等。ERP 后台通常不需要。",
+          "evidence": "页面最底部通栏 · 小字号低对比 · 常居中"
+        }
+      ],
+      "modifiers": [
+        {
+          "id": "sticky", "term": "Sticky", "zh": "吸顶", "kind": "modifier", "capability": "sticky", "source": "supplement",
+          "spec": "nav.sticky",
+          "definition": "滚动时元素固定在视口边缘，不随内容滚走。侧栏与顶栏的默认行为。",
+          "evidence": "元素贴视口上/左边缘 · 滚动后与页面相对位置不变（需滚动后二次截图确认）"
+        },
+        {
+          "id": "float", "term": "Floating", "zh": "悬浮", "kind": "modifier", "capability": "float", "source": "supplement",
+          "spec": "nav.float",
+          "definition": "元素脱离文档流浮在内容之上，常带阴影。用于悬浮操作条、悬浮按钮。",
+          "evidence": "元素与相邻内容的间距为 0 或负 · 有明显投影 · 覆盖在内容上层"
+        },
+        {
+          "id": "scroll-spy", "term": "ScrollSpy", "zh": "联动导航", "kind": "modifier", "capability": "scroll-spy", "source": "supplement",
+          "spec": "nav.scrollSpy",
+          "definition": "导航高亮随内容滚动位置自动切换（锚点的反向驱动）。",
+          "evidence": "单张截图无法判定 · 需「顶部 + 中部 + 底部」多张截图对比选中项变化，否则标 unsupported"
+        },
+        {
+          "id": "collapsible", "term": "Collapsible", "zh": "可折叠", "kind": "modifier", "capability": "collapsible", "source": "supplement",
+          "spec": "nav.collapsible",
+          "definition": "容器可展开收起，收起后只留图标或标题。",
+          "evidence": "宽 ≤72px 且只有图标（已是收起态）· 或箭头/汉堡图标位于容器边缘 · 分组标题前有小三角"
+        }
+      ]
+    },
+
+    "layout": {
+      "label": "布局与结构",
+      "note": "回答「这一块怎么摆」。ERP 里决定卡片边界与区块间距。",
+      "terms": [
+        {
+          "id": "card", "term": "Card", "zh": "卡片", "component": "form-card",
+          "spec": "regions", "source": "ant",
+          "definition": "最基础的区块容器，把相关信息聚成一个有边界的面。",
+          "evidence": "纯色矩形 + 圆角 6–12px + 与页面底有轻微色差或投影 · 内部有 padding（16–24px）"
+        },
+        {
+          "id": "descriptions", "term": "Descriptions", "zh": "描述列表", "component": "info-group",
+          "spec": "regions", "source": "ant",
+          "definition": "以「标签 + 值」成对展示只读信息，常见多列布局。A3 详情页主体。",
+          "evidence": "左右成对：左侧是低对比短文本（标签），右侧是正文色值（值）· 多行等距 · 无输入框边框"
+        },
+        {
+          "id": "divider", "term": "Divider", "zh": "分割线", "kind": "atom", "source": "ant",
+          "spec": "-", "definition": "分隔不同内容区块的细线，可带标题。",
+          "evidence": "贯通 1px 线 · 横贯容器 · 颜色比正文浅得多"
+        },
+        {
+          "id": "space", "term": "Space", "zh": "间距", "kind": "atom", "source": "ant",
+          "spec": "tokens.space",
+          "definition": "控制元素之间的统一间距，避免逐处手写 margin。",
+          "evidence": "不可直接识别，用间距值的一致性反推（同层元素间距应相等）"
+        },
+        {
+          "id": "collapse", "term": "Collapse", "zh": "折叠面板", "component": "info-group",
+          "spec": "regions", "source": "ant",
+          "definition": "把多组内容垂直堆叠，可逐个展开收起，节省纵向空间。",
+          "evidence": "每组左侧或右侧有小三角/箭头 · 组间有分割线 · 收起时只留标题行"
+        },
+        {
+          "id": "sticky-action-bar", "term": "StickyActionBar", "zh": "底部吸附动作条", "component": "sticky-action-bar",
+          "spec": "actions", "source": "supplement",
+          "definition": "吸在页面或容器底部的操作条，长表单页用它保证主操作随时可见。A2 的必需区。",
+          "evidence": "贴容器底部 · 通栏 · 有上边框或投影 · 内为右对齐按钮组 · 下方无其他内容"
+        },
+        {
+          "id": "alert-banner", "term": "Alert / Banner", "zh": "提示条", "component": "alert-banner",
+          "spec": "permissions", "source": "ant",
+          "definition": "页面顶部的常驻提示，说明规则、风险或流程约束。A2 的防错提示条。",
+          "evidence": "通栏细条 · 高 32–48px · 有浅色底 + 左侧图标 · 文案为一整句说明"
+        },
+        {
+          "id": "summary-bar", "term": "SummaryBar", "zh": "摘要条", "component": "summary-bar",
+          "spec": "regions", "source": "supplement",
+          "definition": "详情页头部的关键字段摘要带，一屏内交代核心信息。A3 的头部摘要条。",
+          "evidence": "横向一排 3–6 组「标签 + 值」· 每组的值字号大于标签 · 组间有竖分割线"
+        }
+      ]
+    },
+
+    "data": {
+      "label": "数据展示",
+      "note": "回答「数据怎么看」。ERP 页面的主体，也是表格类断言的落点。",
+      "terms": [
+        {
+          "id": "table", "term": "Table", "zh": "表格", "component": "data-table",
+          "spec": "columns", "source": "ant",
+          "definition": "结构化数据的主要呈现方式，含表头、表体、可选的勾选列与操作列。",
+          "evidence": "表头行底色与表体不同 · 列间有竖向分割或等距留白 · 行高一致 · 数字列右对齐"
+        },
+        {
+          "id": "detail-table", "term": "DetailTable", "zh": "明细表格", "component": "detail-table",
+          "spec": "columns", "source": "supplement",
+          "definition": "单据内嵌的明细行表格，可增删行、自动算行金额。A2 / A6 用。",
+          "evidence": "位于单据卡片内部 · 行数少（3–10）· 行尾有删除图标或操作 · 末行常有「+ 添加一行」"
+        },
+        {
+          "id": "summary-row", "term": "SummaryRow", "zh": "汇总行", "component": "data-table",
+          "spec": "columns.summary", "source": "supplement",
+          "definition": "表格底部的合计行，口径为求和或计数。对账页必须与明细自洽。",
+          "evidence": "表格最底部一行 · 底色略深于表体 · 数字列有合计值 · 可能带「合计」标签"
+        },
+        {
+          "id": "statistic", "term": "Statistic", "zh": "统计数值", "component": "kpi-row",
+          "spec": "regions", "source": "ant",
+          "definition": "突出单个关键指标的大字号数值，常配标题、单位与同比。A4 的 KPI 卡行。",
+          "evidence": "数值字号显著大于正文（≥24px）· 上方有标题、下方有单位或环比 · 多个横向等距排列"
+        },
+        {
+          "id": "list", "term": "List", "zh": "列表", "component": "task-list",
+          "spec": "regions", "source": "ant",
+          "definition": "无表头的纵向条目集合，每项是自由排版的一行。A5 左栏任务列表。",
+          "evidence": "纵向条目 · 无表头行 · 每项高度较大（≥56px）· 项内含标题 + 若干元信息"
+        },
+        {
+          "id": "timeline", "term": "Timeline", "zh": "时间轴", "component": "timeline",
+          "spec": "statusMachine.nodeFlow", "source": "ant",
+          "definition": "按时间顺序排列的节点轨迹，展示流程已走过与待走的节点。A5 右栏审批轨迹。",
+          "evidence": "左侧一条竖线 + 节点圆点 · 节点上下交替或同侧排布 · 每节点含标题与时间"
+        },
+        {
+          "id": "tag", "term": "Tag", "zh": "标签", "component": "status-tag",
+          "spec": "statusMachine.states", "source": "ant",
+          "definition": "用于标记状态或分类的小色块。ERP 状态用胶囊形（pill）。",
+          "evidence": "小尺寸圆角块 · 底为浅色、字为同色系深色 · 高度 20–26px · 圆角接近全圆"
+        },
+        {
+          "id": "badge", "term": "Badge", "zh": "徽标", "component": "status-tag",
+          "spec": "-", "source": "ant",
+          "definition": "附在元素角上的数字或小点，提示未读/待办数量。",
+          "evidence": "圆形小色块（直径 14–20px）吸附在文字或图标右上角 · 内含数字"
+        },
+        {
+          "id": "chart", "term": "Chart", "zh": "图表", "component": "chart-area",
+          "spec": "regions", "source": "supplement",
+          "definition": "折线/柱状/环形等数据可视化区块。A4 看板的中区。",
+          "evidence": "区域内出现坐标轴、网格线、图例或扇形/柱形 · 底色为卡片色 · 常带标题与时间切换"
+        },
+        {
+          "id": "progress", "term": "Progress", "zh": "进度条", "component": "chart-area",
+          "spec": "-", "source": "ant",
+          "definition": "显示当前进度占目标的比例，可用条形或环形。",
+          "evidence": "细长条形 · 已填充部分为主题色、未填充为浅灰 · 右侧或中间有百分比数字"
+        },
+        {
+          "id": "tree", "term": "Tree", "zh": "树形控件", "component": "nav-side",
+          "spec": "-", "source": "ant",
+          "definition": "层级数据的展开收起展示，侧栏多级菜单与组织架构都用它。",
+          "evidence": "每行左侧有缩进 · 缩进处有小三角展开箭头 · 同级行左边界对齐"
+        },
+        {
+          "id": "skeleton", "term": "Skeleton", "zh": "骨架屏", "component": "skeleton",
+          "spec": "-", "source": "ant",
+          "definition": "数据加载中的占位形态，用灰块示意最终布局，避免白屏跳动。",
+          "evidence": "灰底圆角条块 · 排列方式与真实内容一致 · 无文字 · 常带轻微闪烁动画"
+        },
+        {
+          "id": "empty", "term": "Empty", "zh": "空状态", "component": "empty-state",
+          "spec": "-", "source": "ant",
+          "definition": "无数据时的兜底展示，必须给文案而不是留白表格。A1 有硬性断言。",
+          "evidence": "区域内出现居中图标 + 一句说明 · 通常还有「新建」引导按钮"
+        }
+      ]
+    },
+
+    "input": {
+      "label": "录入与表单",
+      "note": "回答「用户怎么填」。控件形态由字段类型推导，见 references/data-contract.md。",
+      "terms": [
+        {
+          "id": "form", "term": "Form", "zh": "表单", "component": "form-card",
+          "spec": "fields", "source": "ant",
+          "definition": "录入字段的集合，含标签、控件、必填标记与校验提示。A2 主体。",
+          "evidence": "纵向排列的「标签 + 控件」对 · 标签左对齐或顶对齐 · 必填项标签前有红色星号"
+        },
+        {
+          "id": "input", "term": "Input", "zh": "输入框", "kind": "control", "component": "form-card", "source": "ant",
+          "spec": "fields.control", "definition": "单行文本输入控件。",
+          "evidence": "细边框矩形 · 高 28–36px · 内左对齐文字或灰色占位符 · 圆角 4–6px"
+        },
+        {
+          "id": "select", "term": "Select", "zh": "选择器", "kind": "control", "component": "form-card", "source": "ant",
+          "spec": "fields.control", "definition": "从预置选项中单选或多选。enum 字段的默认控件。",
+          "evidence": "形似输入框但右端有向下小三角 · 内含当前选中项文案"
+        },
+        {
+          "id": "date-picker", "term": "DatePicker", "zh": "日期选择器", "kind": "control", "component": "form-card", "source": "ant",
+          "spec": "fields.control", "definition": "选择日期或日期区间。date / datetime 字段的默认控件。",
+          "evidence": "形似输入框但右端有日历图标 · 内有 YYYY-MM-DD 格式文本 · 区间选择为两个框夹一个短横"
+        },
+        {
+          "id": "upload", "term": "Upload", "zh": "上传", "kind": "control", "component": "attachment-card", "source": "ant",
+          "spec": "fields.control", "definition": "选择并上传文件，可含已上传文件列表。attachment 字段的控件。",
+          "evidence": "虚线边框区域 + 中央上传图标 · 或文件名列表 + 删除图标"
+        },
+        {
+          "id": "checkbox", "term": "Checkbox", "zh": "多选框", "kind": "control", "component": "form-card", "source": "ant",
+          "spec": "fields.control", "definition": "独立勾选项，可多选。表格行首的勾选列也用它。",
+          "evidence": "小方框（14–16px）+ 右侧文字 · 选中时方框填充主题色并带对勾"
+        },
+        {
+          "id": "radio", "term": "Radio", "zh": "单选框", "kind": "control", "component": "form-card", "source": "ant",
+          "spec": "fields.control", "definition": "一组互斥选项中选一个。",
+          "evidence": "小圆框 + 右侧文字 · 选中时圆内出现实心点"
+        },
+        {
+          "id": "switch", "term": "Switch", "zh": "开关", "kind": "control", "component": "form-card", "source": "ant",
+          "spec": "fields.control", "definition": "布尔值的即时切换，用于启用/停用这类二元状态。",
+          "evidence": "椭圆形滑块（宽 36–44px）· 开启态填充主题色、圆点靠右"
+        }
+      ]
+    },
+
+    "feedback": {
+      "label": "反馈与状态",
+      "note": "回答「系统告诉我什么」。弹窗类与状态类。",
+      "terms": [
+        {
+          "id": "modal", "term": "Modal", "zh": "对话框", "component": "modal",
+          "spec": "actions", "source": "ant",
+          "definition": "模态浮层，打断当前流程要求用户处理，关闭前不能继续操作。",
+          "evidence": "页面中央浮层 · 四周有半透明遮罩 · 含标题、正文、右下角按钮组 · 有投影"
+        },
+        {
+          "id": "drawer", "term": "Drawer", "zh": "抽屉", "component": "drawer",
+          "spec": "extends", "source": "ant",
+          "definition": "从边缘滑出的面板，不离开当前页就能看详情或编辑。ERP 详情常用。",
+          "evidence": "贴页面右侧（或左）的纵向面板 · 宽 360–720px · 与左侧内容有分界 · 常带遮罩"
+        },
+        {
+          "id": "message", "term": "Message", "zh": "全局提示", "component": "toast",
+          "spec": "-", "source": "ant",
+          "definition": "轻量即时反馈，操作完成后短暂出现并自动消失，不打断流程。",
+          "evidence": "页面顶部居中或浮层上方的窄条 · 含图标 + 一句短文案 · 单帧截图可见但有淡出迹象"
+        },
+        {
+          "id": "notification", "term": "Notification", "zh": "通知提醒", "component": "toast",
+          "spec": "-", "source": "ant",
+          "definition": "从角落弹出的通知卡片，内容比 Message 长，可带操作链接。",
+          "evidence": "页面右上角浮层卡片 · 含标题 + 描述 + 可能的操作 · 有投影"
+        },
+        {
+          "id": "popconfirm", "term": "Popconfirm", "zh": "气泡确认框", "component": "modal",
+          "spec": "actions.confirm", "source": "ant",
+          "definition": "附着在触发元素旁的小确认气泡，用于破坏性操作的二次确认。",
+          "evidence": "小浮层 + 指向触发元素的小三角 · 含一句问句 + 「确定/取消」两个小按钮"
+        },
+        {
+          "id": "spin", "term": "Spin", "zh": "加载中", "component": "skeleton",
+          "spec": "-", "source": "ant",
+          "definition": "异步等待时的加载指示，可整区遮罩或局部嵌入。",
+          "evidence": "旋转圆环图标 · 整区加载时有半透明遮罩 · 居中"
+        },
+        {
+          "id": "result", "term": "Result", "zh": "结果页", "component": "empty-state",
+          "spec": "-", "source": "ant",
+          "definition": "操作结束后的整页反馈，说明结果并给出后续动作。",
+          "evidence": "整区居中 · 大图标（成功/失败/警告）+ 标题 + 描述 + 按钮组"
+        }
+      ]
+    },
+
+    "interaction": {
+      "label": "交互状态",
+      "note": "回答「元素当前处于什么状态」。单张静态截图只能看到其中一部分 —— 这部分推断必须标低置信度。",
+      "terms": [
+        {
+          "id": "hover", "term": "Hover", "zh": "悬停", "kind": "state", "source": "article",
+          "spec": "-", "definition": "指针移入时的反馈，通常是底色或文字色变化。静态截图无法判定。",
+          "evidence": "不可从单张截图判定 · 需与默认态成对截图对比"
+        },
+        {
+          "id": "active", "term": "Active", "zh": "激活 / 选中", "kind": "state", "source": "article",
+          "spec": "nav.items", "definition": "当前生效项的强调态，导航选中项与表格选中行都用它。",
+          "evidence": "底色块（主色浅底）或左侧 2–3px 色条 · 文字变主题色或加深 · 同组内唯一"
+        },
+        {
+          "id": "focus", "term": "Focus", "zh": "聚焦", "kind": "state", "source": "article",
+          "spec": "-", "definition": "键盘或点击获得焦点时的外圈提示，无障碍必需。",
+          "evidence": "控件外圈 2px 主题色描边或光圈 · 通常只有一个元素处于该态"
+        },
+        {
+          "id": "disabled", "term": "Disabled", "zh": "禁用", "kind": "state", "source": "article",
+          "spec": "actions.allowedStates", "definition": "当前条件下不可操作，视觉上弱化且不响应点击。ERP 里由状态机决定。",
+          "evidence": "文字与边框对比度显著降低 · 底色变灰 · 无投影 · 与可用态并排时差异明显"
+        },
+        {
+          "id": "selected", "term": "Selected", "zh": "已选", "kind": "state", "source": "article",
+          "spec": "actions.scope", "definition": "批量操作中已被勾选的行或项。工具条需显示已选数量。",
+          "evidence": "行底色变浅主题色 · 行首勾选框为选中态 · 常伴随工具条出现「已选 N 项」"
+        }
+      ]
+    }
+  },
+
+  "crossReference": {
+    "note": "本表与其它契约文件的关系 —— 保证一个术语只在一个地方定义，其余地方引用。",
+    "to_components": "term.component → spec/components.json 的 components 键（渲染无关的语义 id）",
+    "to_pagespec": "term.spec → PageSpec 中承载该术语的字段路径；写「-」表示暂不落字段（仅供标注与评审沟通）",
+    "to_archetypes": "spec/archetypes.json 的 regions 用中文区域名；与 term.zh 可能不完全同字（如「页面头」vs「页头」），映射见 components.json 的 aliases",
+    "to_recipes": "字段类型 → 控件的推导规则在 references/data-contract.md；本表只定义控件叫什么，不定义何时用"
+  }
+}

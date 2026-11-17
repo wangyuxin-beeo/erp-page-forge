@@ -1,0 +1,1052 @@
+{
+  "specVersion": "1.0",
+  "title": "archetypes",
+  "meta": {
+    "purpose": "A1–A6 的必需元素与交互断言清单（references/page-archetypes.md 的可执行化版本）。",
+    "consumers": [
+      "build/verify_contract.py —— 消费 static 段，做产物静态文本断言",
+      "build/verify_acceptance.py —— 消费 static/render/interaction/data 四段，出验收报告",
+      "SKILL.md 工作流 —— 生成前用 --plan 模式把本次验收项列给用户看（验收清单前置）"
+    ],
+    "kinds": {
+      "text": "产物文本需包含该子串",
+      "text_all": "需包含全部子串",
+      "text_any": "至少包含其一",
+      "regex": "需匹配该正则",
+      "regex_count": "正则命中次数需 >= min",
+      "absent": "不得出现该子串（反例防线）",
+      "dom": "渲染后 DOM 断言，参数见 domSpec",
+      "interaction": "交互断言，交给 driver 执行",
+      "data": "数据自洽断言，交给 driver 执行"
+    },
+    "severity": {
+      "hard": "硬性，不过即不合格（契约/渲染/数据）",
+      "soft": "建议项，不过仅提示（视觉类）"
+    },
+    "executionOrder": {
+      "note": "★ 断言执行顺序有语义：只读断言必须排在改状态的断言之前，否则前一步的点击会污染后一步的观察。",
+      "order": [
+        "contract",
+        "render",
+        "data",
+        "interaction"
+      ],
+      "evidence": "实测踩到过：data 断言原先排在 interaction 之后，前序的「同意/驳回」把页面状态改乱，导致时间线与枚举断言看到的是被操作过的页面，产生假失败。同一数组内部的 interaction 也要按「只读 → 改状态」排，破坏性动作放最后。"
+    },
+    "hints": {
+      "purpose": "通用 driver 靠文本与语义启发式驱动页面；产物类名千差万别时，允许在 PageSpec.interactionHints 里声明锚点选择器，driver 优先使用。",
+      "keys": {
+        "taskCard": "列表/任务卡片元素选择器",
+        "detailAnchor": "详情区标题元素选择器（用于判断切换是否生效）",
+        "todoBadge": "待办计数所在元素选择器",
+        "dialog": "弹窗容器选择器",
+        "dialogInput": "弹窗内输入控件选择器",
+        "table": "数据表格选择器",
+        "summaryRow": "汇总行选择器"
+      }
+    }
+  },
+  "archetypes": {
+    "A1": {
+      "name": "管理列表页",
+      "aliases": [
+        "列表",
+        "管理",
+        "档案",
+        "台账列表"
+      ],
+      "regions": [
+        "页面头",
+        "查询区",
+        "工具条",
+        "数据表格",
+        "分页器"
+      ],
+      "regionOrderFixed": true,
+      "static": [
+        {
+          "id": "A1.query-actions",
+          "kind": "text_all",
+          "values": [
+            "查询",
+            "重置"
+          ],
+          "severity": "hard",
+          "desc": "查询区有查询与重置两个动作"
+        },
+        {
+          "id": "A1.empty-state",
+          "kind": "text",
+          "value": "没有符合条件的数据",
+          "severity": "hard",
+          "desc": "空状态有兜底文案，不是白表格"
+        },
+        {
+          "id": "A1.bulk-hint",
+          "kind": "text",
+          "value": "已选",
+          "severity": "hard",
+          "desc": "工具条显示已选数量"
+        },
+        {
+          "id": "A1.nowrap-rule",
+          "kind": "regex",
+          "pattern": "white-space\\s*:\\s*nowrap",
+          "severity": "hard",
+          "desc": "数字/时间列有 nowrap（防折行，是规范铁律）"
+        },
+        {
+          "id": "A1.minmax-rule",
+          "kind": "regex",
+          "pattern": "minmax\\(0\\s*,\\s*1fr\\)",
+          "severity": "soft",
+          "desc": "弹性列建议用 minmax(0,1fr) 而非裸 1fr（写法自由，真保障由渲染断言提供）"
+        },
+        {
+          "id": "A1.anti-raw-color",
+          "kind": "absent",
+          "value": "#409EFF",
+          "severity": "soft",
+          "desc": "不得出现随手色值"
+        }
+      ],
+      "render": [
+        {
+          "id": "A1.no-script-error",
+          "kind": "dom",
+          "domSpec": {
+            "forbidScriptErrors": true
+          },
+          "severity": "hard",
+          "desc": "页面脚本零运行错误（白屏/空表格的根因通常在这里）"
+        },
+        {
+          "id": "A1.no-empty-column",
+          "kind": "dom",
+          "domSpec": {
+            "noAllEmptyColumns": true
+          },
+          "severity": "hard",
+          "desc": "表格没有「整列全空」的列（值没接上数据的典型症状）"
+        },
+        {
+          "id": "A1.no-overflow-1280",
+          "kind": "dom",
+          "domSpec": {
+            "maxOverflowPx": 2
+          },
+          "severity": "hard",
+          "desc": "1280px 视口无横向溢出"
+        },
+        {
+          "id": "A1.no-dirty",
+          "kind": "dom",
+          "domSpec": {
+            "forbidDirty": true
+          },
+          "severity": "hard",
+          "desc": "渲染后无 undefined / NaN / [object Object]"
+        },
+        {
+          "id": "A1.not-blank",
+          "kind": "dom",
+          "domSpec": {
+            "minTextLen": 600
+          },
+          "severity": "hard",
+          "desc": "正文非空（下限 600 字，按原型内容量定）"
+        },
+        {
+          "id": "A1.pager-total",
+          "kind": "dom",
+          "domSpec": {
+            "textMatch": "共[^条]{0,40}[\\d,]+[^条]{0,20}条"
+          },
+          "severity": "hard",
+          "desc": "分页器渲染后显示总条数（运行时渲染，故按渲染文本判定）"
+        }
+      ],
+      "interaction": [
+        {
+          "id": "A1.filter",
+          "driver": "filter_changes_rows",
+          "severity": "hard",
+          "desc": "输入条件点查询 → 表格行数变化"
+        },
+        {
+          "id": "A1.reset",
+          "driver": "reset_restores_rows",
+          "severity": "hard",
+          "desc": "点重置 → 条件清空且恢复全量"
+        },
+        {
+          "id": "A1.sort",
+          "driver": "sort_reorders",
+          "severity": "hard",
+          "desc": "点表头 → 数据重排且有升降序指示"
+        },
+        {
+          "id": "A1.paginate",
+          "driver": "pagination_changes_rows",
+          "severity": "hard",
+          "desc": "翻页 → 内容变化且显示第 X-Y 条"
+        },
+        {
+          "id": "A1.bulk",
+          "driver": "bulk_enables_on_select",
+          "severity": "hard",
+          "desc": "勾选后批量按钮由禁用变可用"
+        },
+        {
+          "id": "A1.empty",
+          "driver": "empty_state_on_no_match",
+          "severity": "hard",
+          "desc": "筛选不到 → 显示空状态而非空白"
+        }
+      ],
+      "data": [
+        {
+          "id": "A1.summary",
+          "driver": "summary_equals_detail",
+          "severity": "hard",
+          "desc": "汇总行合计 = 明细逐行之和（分位不差）"
+        },
+        {
+          "id": "A1.rowcount",
+          "driver": "row_count_min",
+          "severity": "hard",
+          "desc": "列表行数 ≥ minRows（默认 12，够触发分页）"
+        }
+      ]
+    },
+    "A2": {
+      "name": "单据表单页",
+      "aliases": [
+        "新建",
+        "申请单",
+        "录入",
+        "编辑表单"
+      ],
+      "regions": [
+        "页面头",
+        "防错提示条",
+        "单据信息卡",
+        "明细信息卡",
+        "附件与说明卡",
+        "底部吸附动作条"
+      ],
+      "regionOrderFixed": true,
+      "static": [
+        {
+          "id": "A2.footer-actions",
+          "kind": "text_all",
+          "values": [
+            "暂存",
+            "提交"
+          ],
+          "severity": "hard",
+          "desc": "底部动作条有暂存与提交"
+        },
+        {
+          "id": "A2.required-star",
+          "kind": "regex",
+          "pattern": "(\\*|必填)",
+          "severity": "hard",
+          "desc": "必填字段有星号或必填标识"
+        },
+        {
+          "id": "A2.total",
+          "kind": "text",
+          "value": "合计",
+          "severity": "hard",
+          "desc": "明细区有合计行"
+        },
+        {
+          "id": "A2.sticky-bar",
+          "kind": "regex",
+          "pattern": "position\\s*:\\s*sticky",
+          "severity": "hard",
+          "desc": "底部动作条吸附，长表单滚动时可见"
+        },
+        {
+          "id": "A2.line-add",
+          "kind": "text_any",
+          "values": [
+            "添加行",
+            "新增行",
+            "导入"
+          ],
+          "severity": "hard",
+          "desc": "明细行可增删"
+        }
+      ],
+      "render": [
+        {
+          "id": "A2.no-script-error",
+          "kind": "dom",
+          "domSpec": {
+            "forbidScriptErrors": true
+          },
+          "severity": "hard",
+          "desc": "页面脚本零运行错误（白屏/空表格的根因通常在这里）"
+        },
+        {
+          "id": "A2.no-empty-column",
+          "kind": "dom",
+          "domSpec": {
+            "noAllEmptyColumns": true
+          },
+          "severity": "hard",
+          "desc": "表格没有「整列全空」的列（值没接上数据的典型症状）"
+        },
+        {
+          "id": "A2.no-overflow-1280",
+          "kind": "dom",
+          "domSpec": {
+            "maxOverflowPx": 2
+          },
+          "severity": "hard",
+          "desc": "1280px 无横向溢出"
+        },
+        {
+          "id": "A2.no-dirty",
+          "kind": "dom",
+          "domSpec": {
+            "forbidDirty": true
+          },
+          "severity": "hard",
+          "desc": "无脏值"
+        }
+      ],
+      "interaction": [
+        {
+          "id": "A2.auto-amount",
+          "driver": "line_amount_auto",
+          "severity": "hard",
+          "desc": "改数量或单价 → 行金额自动重算"
+        },
+        {
+          "id": "A2.total-sync",
+          "driver": "add_row_updates_total",
+          "severity": "hard",
+          "desc": "增删行或改数 → 合计实时更新"
+        },
+        {
+          "id": "A2.required-block",
+          "driver": "required_blocks_submit",
+          "severity": "hard",
+          "desc": "必填为空 → 红字提示 + 阻止提交"
+        },
+        {
+          "id": "A2.line-min",
+          "driver": "empty_lines_block_submit",
+          "severity": "hard",
+          "desc": "零行明细不允许提交"
+        }
+      ],
+      "data": [
+        {
+          "id": "A2.line-amount",
+          "driver": "line_amount_equals_qty_price",
+          "severity": "hard",
+          "desc": "每行 金额 = 数量 × 单价"
+        },
+        {
+          "id": "A2.total-sum",
+          "driver": "total_equals_lines",
+          "severity": "hard",
+          "desc": "合计 = 各行金额之和"
+        }
+      ]
+    },
+    "A3": {
+      "name": "主数据详情页",
+      "aliases": [
+        "详情",
+        "360",
+        "主数据"
+      ],
+      "regions": [
+        "页面头",
+        "头部摘要条",
+        "Tabs",
+        "信息分组",
+        "（可选）关键指标小卡"
+      ],
+      "regionOrderFixed": true,
+      "static": [
+        {
+          "id": "A3.tabs",
+          "kind": "regex_count",
+          "pattern": "tab",
+          "min": 2,
+          "severity": "hard",
+          "desc": "有 Tabs 分区"
+        },
+        {
+          "id": "A3.change-log",
+          "kind": "text_any",
+          "values": [
+            "变更记录",
+            "变更轨迹",
+            "变更历史"
+          ],
+          "severity": "hard",
+          "desc": "有变更记录 Tab"
+        },
+        {
+          "id": "A3.related",
+          "kind": "text_any",
+          "values": [
+            "关联单据",
+            "关联单"
+          ],
+          "severity": "hard",
+          "desc": "有关联单据 Tab"
+        },
+        {
+          "id": "A3.summary-status",
+          "kind": "regex",
+          "pattern": "状态",
+          "severity": "hard",
+          "desc": "头部摘要显示状态"
+        }
+      ],
+      "render": [
+        {
+          "id": "A3.no-script-error",
+          "kind": "dom",
+          "domSpec": {
+            "forbidScriptErrors": true
+          },
+          "severity": "hard",
+          "desc": "页面脚本零运行错误（白屏/空表格的根因通常在这里）"
+        },
+        {
+          "id": "A3.no-empty-column",
+          "kind": "dom",
+          "domSpec": {
+            "noAllEmptyColumns": true
+          },
+          "severity": "hard",
+          "desc": "表格没有「整列全空」的列（值没接上数据的典型症状）"
+        },
+        {
+          "id": "A3.no-overflow-1280",
+          "kind": "dom",
+          "domSpec": {
+            "maxOverflowPx": 2
+          },
+          "severity": "hard",
+          "desc": "1280px 无横向溢出"
+        },
+        {
+          "id": "A3.no-dirty",
+          "kind": "dom",
+          "domSpec": {
+            "forbidDirty": true
+          },
+          "severity": "hard",
+          "desc": "无脏值"
+        }
+      ],
+      "interaction": [
+        {
+          "id": "A3.tab-switch",
+          "driver": "tab_switch_no_reload",
+          "severity": "hard",
+          "desc": "Tab 切换不刷新页面，当前项有下划线"
+        },
+        {
+          "id": "A3.confirm-destructive",
+          "driver": "destructive_needs_confirm",
+          "severity": "hard",
+          "desc": "停用/变更等破坏性操作二次确认"
+        },
+        {
+          "id": "A3.state-buttons",
+          "driver": "status_toggles_buttons",
+          "severity": "hard",
+          "desc": "启用态显示停用、停用态显示启用"
+        }
+      ],
+      "data": [
+        {
+          "id": "A3.diff",
+          "driver": "timeline_has_diff",
+          "severity": "hard",
+          "desc": "变更记录时间线含旧值→新值 diff"
+        }
+      ]
+    },
+    "A4": {
+      "name": "运营看板页",
+      "aliases": [
+        "看板",
+        "仪表盘",
+        "分析",
+        "健康度"
+      ],
+      "regions": [
+        "页面头（含时间范围）",
+        "KPI 卡行",
+        "中区图表",
+        "下区清单/排行"
+      ],
+      "regionOrderFixed": true,
+      "static": [
+        {
+          "id": "A4.kpi-label",
+          "kind": "text_any",
+          "values": [
+            "环比",
+            "同比"
+          ],
+          "severity": "hard",
+          "desc": "KPI 卡带环比或同比"
+        },
+        {
+          "id": "A4.chart",
+          "kind": "regex",
+          "pattern": "<svg",
+          "severity": "hard",
+          "desc": "图表用手写 SVG，不引图表库"
+        },
+        {
+          "id": "A4.range",
+          "kind": "text_any",
+          "values": [
+            "本月",
+            "本季",
+            "本年"
+          ],
+          "severity": "hard",
+          "desc": "有时间范围切换"
+        },
+        {
+          "id": "A4.warning",
+          "kind": "text_any",
+          "values": [
+            "预警",
+            "预警清单",
+            "呆滞"
+          ],
+          "severity": "hard",
+          "desc": "下区有预警或排行清单"
+        },
+        {
+          "id": "A4.caliber",
+          "kind": "regex",
+          "pattern": "=|口径",
+          "severity": "soft",
+          "desc": "图表标注单位与口径说明"
+        }
+      ],
+      "render": [
+        {
+          "id": "A4.no-script-error",
+          "kind": "dom",
+          "domSpec": {
+            "forbidScriptErrors": true
+          },
+          "severity": "hard",
+          "desc": "页面脚本零运行错误（白屏/空表格的根因通常在这里）"
+        },
+        {
+          "id": "A4.no-empty-column",
+          "kind": "dom",
+          "domSpec": {
+            "noAllEmptyColumns": true
+          },
+          "severity": "hard",
+          "desc": "表格没有「整列全空」的列（值没接上数据的典型症状）"
+        },
+        {
+          "id": "A4.no-overflow-1280",
+          "kind": "dom",
+          "domSpec": {
+            "maxOverflowPx": 2
+          },
+          "severity": "hard",
+          "desc": "1280px 无横向溢出"
+        },
+        {
+          "id": "A4.no-dirty",
+          "kind": "dom",
+          "domSpec": {
+            "forbidDirty": true
+          },
+          "severity": "hard",
+          "desc": "无脏值"
+        }
+      ],
+      "interaction": [
+        {
+          "id": "A4.range-switch",
+          "driver": "range_switch_changes_values",
+          "severity": "hard",
+          "desc": "切换时间范围 → 数值与图形随之变化"
+        },
+        {
+          "id": "A4.empty-holder",
+          "driver": "no_data_holder",
+          "severity": "soft",
+          "desc": "缺数据时给「暂无数据」占位，不留空白框"
+        }
+      ],
+      "data": [
+        {
+          "id": "A4.kpi-count",
+          "driver": "kpi_count_min",
+          "severity": "hard",
+          "desc": "KPI 卡 ≥4 张"
+        },
+        {
+          "id": "A4.trend-points",
+          "driver": "trend_points_min",
+          "severity": "hard",
+          "desc": "趋势点 ≥12 个"
+        },
+        {
+          "id": "A4.tone-match",
+          "driver": "series_tone_matches_semantics",
+          "severity": "hard",
+          "desc": "KPI 语义色与数值方向一致（涨红跌绿）"
+        }
+      ]
+    },
+    "A5": {
+      "name": "审批工作台",
+      "aliases": [
+        "待办",
+        "审批",
+        "工作台",
+        "审批中心"
+      ],
+      "regions": [
+        "左栏任务列表",
+        "中栏单据详情",
+        "右栏审批轨迹",
+        "底部审批动作"
+      ],
+      "regionOrderFixed": true,
+      "static": [
+        {
+          "id": "A5.tabs",
+          "kind": "text_all",
+          "values": [
+            "待办",
+            "已办"
+          ],
+          "severity": "hard",
+          "desc": "左栏有待办/已办分栏"
+        },
+        {
+          "id": "A5.actions",
+          "kind": "text_all",
+          "values": [
+            "同意",
+            "驳回",
+            "转办"
+          ],
+          "severity": "hard",
+          "desc": "三个审批动作齐全"
+        },
+        {
+          "id": "A5.timeline",
+          "kind": "text",
+          "value": "审批轨迹",
+          "severity": "hard",
+          "desc": "右栏是审批轨迹时间线"
+        },
+        {
+          "id": "A5.current-node",
+          "kind": "regex",
+          "pattern": "当前节点|待你处理",
+          "severity": "hard",
+          "desc": "时间线标出当前节点"
+        },
+        {
+          "id": "A5.no-self-approve",
+          "kind": "regex",
+          "pattern": "自审|本人提交|提交人",
+          "severity": "hard",
+          "desc": "实现「提交人不可自审」规则"
+        },
+        {
+          "id": "A5.reject-reason",
+          "kind": "regex",
+          "pattern": "驳回原因|审批意见|意见",
+          "severity": "hard",
+          "desc": "驳回需填意见/原因"
+        }
+      ],
+      "render": [
+        {
+          "id": "A5.no-script-error",
+          "kind": "dom",
+          "domSpec": {
+            "forbidScriptErrors": true
+          },
+          "severity": "hard",
+          "desc": "页面脚本零运行错误（白屏/空表格的根因通常在这里）"
+        },
+        {
+          "id": "A5.no-empty-column",
+          "kind": "dom",
+          "domSpec": {
+            "noAllEmptyColumns": true
+          },
+          "severity": "hard",
+          "desc": "表格没有「整列全空」的列（值没接上数据的典型症状）"
+        },
+        {
+          "id": "A5.no-overflow-1280",
+          "kind": "dom",
+          "domSpec": {
+            "maxOverflowPx": 2
+          },
+          "severity": "hard",
+          "desc": "1280px 无横向溢出（三栏最易踩）"
+        },
+        {
+          "id": "A5.no-dirty",
+          "kind": "dom",
+          "domSpec": {
+            "forbidDirty": true
+          },
+          "severity": "hard",
+          "desc": "无脏值"
+        },
+        {
+          "id": "A5.not-blank",
+          "kind": "dom",
+          "domSpec": {
+            "minTextLen": 600
+          },
+          "severity": "hard",
+          "desc": "正文非空（下限 600 字，按原型内容量定）"
+        }
+      ],
+      "interaction": [
+        {
+          "id": "A5.no-self",
+          "driver": "self_submit_cannot_approve",
+          "severity": "hard",
+          "desc": "本人提交的单据隐藏同意/驳回"
+        },
+        {
+          "id": "A5.select-task",
+          "driver": "select_task_switches_detail",
+          "severity": "hard",
+          "desc": "点左侧任务卡 → 中栏右栏随之切换"
+        },
+        {
+          "id": "A5.reject-input",
+          "driver": "reject_requires_reason",
+          "severity": "hard",
+          "desc": "驳回必须填意见才能执行（只读探测，不改变单据状态）"
+        },
+        {
+          "id": "A5.transfer-input",
+          "driver": "transfer_requires_receiver",
+          "severity": "hard",
+          "desc": "转办必须选接收人才能执行（只读探测，不改变单据状态）"
+        },
+        {
+          "id": "A5.agree-advance",
+          "driver": "agree_advances_timeline",
+          "severity": "hard",
+          "desc": "同意 → 节点推进、下一节点变为当前"
+        },
+        {
+          "id": "A5.agree-decrement",
+          "driver": "agree_decrements_todo",
+          "severity": "hard",
+          "desc": "同意 → 待办计数实时减少（收件箱语义）"
+        }
+      ],
+      "data": [
+        {
+          "id": "A5.timeline-len",
+          "driver": "timeline_len_equals_node_index",
+          "severity": "hard",
+          "desc": "时间线已办节点数 = 当前节点索引"
+        },
+        {
+          "id": "A5.todo-count",
+          "driver": "todo_count_matches_list",
+          "severity": "hard",
+          "desc": "待办计数 = 待办列表实际条数"
+        },
+        {
+          "id": "A5.status-enum",
+          "driver": "enum_coverage",
+          "severity": "hard",
+          "desc": "状态枚举在数据中被覆盖到（遍历各视图后判定，不含中间态）"
+        }
+      ]
+    },
+    "A6": {
+      "name": "台账 / 对账页",
+      "aliases": [
+        "对账",
+        "台账",
+        "报表",
+        "余额表"
+      ],
+      "regions": [
+        "页面头（切换/导出/打印）",
+        "条件条",
+        "资金摘要",
+        "明细台账",
+        "固定汇总行",
+        "差异说明"
+      ],
+      "regionOrderFixed": true,
+      "static": [
+        {
+          "id": "A6.summary-fixed",
+          "kind": "regex",
+          "pattern": "tfoot|sticky|汇总",
+          "severity": "hard",
+          "desc": "汇总行在滚动区外固定"
+        },
+        {
+          "id": "A6.period",
+          "kind": "text_any",
+          "values": [
+            "期间",
+            "对账期间",
+            "账期"
+          ],
+          "severity": "hard",
+          "desc": "有期间选择"
+        },
+        {
+          "id": "A6.export",
+          "kind": "text_any",
+          "values": [
+            "导出",
+            "打印"
+          ],
+          "severity": "hard",
+          "desc": "有导出或打印"
+        },
+        {
+          "id": "A6.balance",
+          "kind": "text_any",
+          "values": [
+            "余额",
+            "累计"
+          ],
+          "severity": "hard",
+          "desc": "有累计余额列"
+        },
+        {
+          "id": "A6.print-css",
+          "kind": "regex",
+          "pattern": "@media\\s+print",
+          "severity": "soft",
+          "desc": "有打印样式（隐藏侧边栏与操作按钮）"
+        },
+        {
+          "id": "A6.tabular-nums",
+          "kind": "regex",
+          "pattern": "tabular-nums|font-variant-numeric",
+          "severity": "soft",
+          "desc": "数字列建议等宽对齐（写法自由，真保障由渲染断言提供）"
+        }
+      ],
+      "render": [
+        {
+          "id": "A6.no-script-error",
+          "kind": "dom",
+          "domSpec": {
+            "forbidScriptErrors": true
+          },
+          "severity": "hard",
+          "desc": "页面脚本零运行错误（白屏/空表格的根因通常在这里）"
+        },
+        {
+          "id": "A6.no-empty-column",
+          "kind": "dom",
+          "domSpec": {
+            "noAllEmptyColumns": true
+          },
+          "severity": "hard",
+          "desc": "表格没有「整列全空」的列（值没接上数据的典型症状）"
+        },
+        {
+          "id": "A6.no-overflow-1280",
+          "kind": "dom",
+          "domSpec": {
+            "maxOverflowPx": 2
+          },
+          "severity": "hard",
+          "desc": "1280px 无横向溢出"
+        },
+        {
+          "id": "A6.no-dirty",
+          "kind": "dom",
+          "domSpec": {
+            "forbidDirty": true
+          },
+          "severity": "hard",
+          "desc": "无脏值"
+        }
+      ],
+      "interaction": [
+        {
+          "id": "A6.period-switch",
+          "driver": "period_switch_refreshes",
+          "severity": "hard",
+          "desc": "切换期间 → 摘要与明细同步刷新"
+        },
+        {
+          "id": "A6.diff-prompt",
+          "driver": "diff_prompts_manual_review",
+          "severity": "hard",
+          "desc": "有差异时标红并提示人工复核"
+        }
+      ],
+      "data": [
+        {
+          "id": "A6.balance-cumulative",
+          "driver": "balance_is_cumulative",
+          "severity": "hard",
+          "desc": "余额列是逐行累加，不是区间值"
+        },
+        {
+          "id": "A6.summary-sum",
+          "driver": "summary_equals_detail",
+          "severity": "hard",
+          "desc": "应收/已收合计 = 明细逐行之和"
+        }
+      ]
+    }
+  },
+  "drivers": {
+    "note": "driver 是抽象名，具体实现由 build/verify_acceptance.py 按目标栈派发（standalone→DOM 注入；react/vue→渲染后 DOM 探测）。下面的 expected 说明各 driver 的判定口径。",
+    "filter_changes_rows": {
+      "args": [
+        "querySelector"
+      ],
+      "expected": "填入关键词后渲染行数严格减少且 >0"
+    },
+    "reset_restores_rows": {
+      "expected": "重置后行数恢复到初始全量"
+    },
+    "sort_reorders": {
+      "args": [
+        "thSelector"
+      ],
+      "expected": "点击表头后首行关键列值变化，且表头出现升/降序标记"
+    },
+    "pagination_changes_rows": {
+      "expected": "翻页后首行变化，且页码显示范围更新"
+    },
+    "bulk_enables_on_select": {
+      "expected": "勾选后工具条出现「已选 N 项」且批量按钮 disabled=false"
+    },
+    "empty_state_on_no_match": {
+      "expected": "输入不存在的关键词后出现空状态文案"
+    },
+    "summary_equals_detail": {
+      "args": [
+        "columnIndex"
+      ],
+      "expected": "汇总单元格数值 == 明细列数值之和（容差 0.01）"
+    },
+    "row_count_min": {
+      "args": [
+        "min"
+      ],
+      "expected": "数据行数 >= min"
+    },
+    "line_amount_auto": {
+      "expected": "改数量后行金额单元格随之变化"
+    },
+    "add_row_updates_total": {
+      "expected": "增删行后合计文本变化"
+    },
+    "required_blocks_submit": {
+      "expected": "必填为空时提交不改变状态且有红字提示"
+    },
+    "empty_lines_block_submit": {
+      "expected": "明细为零行时提交被阻止"
+    },
+    "line_amount_equals_qty_price": {
+      "expected": "每行 金额 == 数量 × 单价（容差 0.01）"
+    },
+    "total_equals_lines": {
+      "expected": "合计 == 各行金额之和（容差 0.01）"
+    },
+    "tab_switch_no_reload": {
+      "expected": "切换 Tab 后 URL 不变且对应面板可见"
+    },
+    "destructive_needs_confirm": {
+      "expected": "点击破坏性按钮弹出确认弹窗，取消则不执行"
+    },
+    "status_toggles_buttons": {
+      "expected": "状态改变后按钮组文案随之切换"
+    },
+    "timeline_has_diff": {
+      "expected": "变更时间线存在「旧值 → 新值」形式的 diff 文本"
+    },
+    "range_switch_changes_values": {
+      "expected": "切换时间范围后 KPI 数值文本变化"
+    },
+    "no_data_holder": {
+      "expected": "缺数据处显示「暂无数据」占位"
+    },
+    "kpi_count_min": {
+      "args": [
+        "min"
+      ],
+      "expected": "KPI 卡数量 >= 4"
+    },
+    "trend_points_min": {
+      "args": [
+        "min"
+      ],
+      "expected": "折线点数量 >= 12"
+    },
+    "series_tone_matches_semantics": {
+      "expected": "数值上升用红、下降用绿（国内股市/经营口径一致）"
+    },
+    "select_task_switches_detail": {
+      "expected": "点击任务卡后中栏单号文本变化"
+    },
+    "agree_advances_timeline": {
+      "expected": "同意后时间线已完成节点数 +1"
+    },
+    "agree_decrements_todo": {
+      "expected": "同意后待办计数 -1 且该任务移出待办列表"
+    },
+    "reject_requires_reason": {
+      "expected": "意见为空时驳回被阻止，填入后才生效"
+    },
+    "transfer_requires_receiver": {
+      "expected": "未选接收人时转办被阻止"
+    },
+    "self_submit_cannot_approve": {
+      "expected": "本人提交的单据隐藏同意/驳回按钮"
+    },
+    "timeline_len_equals_node_index": {
+      "expected": "时间线节点数 == nodeFlow 长度，已完成数 == 当前节点索引"
+    },
+    "todo_count_matches_list": {
+      "expected": "待办计数 == 待办列表条数"
+    },
+    "enum_coverage": {
+      "expected": "遍历页签收集文本后，状态机定义的枚举值（剔除 intermediate 中间态）均至少出现一次；跑完切回首个视图"
+    },
+    "period_switch_refreshes": {
+      "expected": "切换期间后摘要与明细同步变化"
+    },
+    "diff_prompts_manual_review": {
+      "expected": "存在差异时标红并出现人工复核提示"
+    }
+  }
+}

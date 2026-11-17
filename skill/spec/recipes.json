@@ -1,0 +1,605 @@
+{
+  "specVersion": "1.0",
+  "title": "recipes",
+  "meta": {
+    "purpose": "14 类 ERP 实体的结构化字段配方 —— 生成层据此把「实体名」直接展开成可用的字段表、列配置与状态机，不再靠模型凭空想字段。",
+    "source": "references/entity-recipes.md 的结构化版本；语义说明仍以该文档为准。",
+    "fieldShape": "与 PageSpec.fields 一致：{name, key, type, required, unique, options, control, align, precision, unit}。生成层可直接落入 PageSpec。",
+    "usage": [
+      "命中实体 → 照抄 fields，再按页面原型挑 listColumns / formGroups / detailTabs",
+      "未命中 → 用 general 通用骨架扩展",
+      "listColumns 只取 6–10 列：编码 + 名称 + 关键业务字段 2–3 个 + 金额 + 状态 + 时间 + 操作"
+    ]
+  },
+
+  "general": {
+    "name": "通用字段骨架",
+    "codeRule": "前缀-年份-序号",
+    "codeExample": "SO-20260917-0081",
+    "groups": {
+      "identity": ["编码", "名称", "类型/分类", "规格型号", "计量单位"],
+      "ownership": ["所属组织", "责任部门", "负责人", "关联客户/供应商"],
+      "status": ["状态", "是否启用", "生效日期", "失效日期"],
+      "audit": ["创建人", "创建时间", "最后修改人", "最后修改时间", "备注"]
+    },
+    "rules": [
+      "编码一律 前缀-年份-序号，严禁 1/2/3 这类无意义主键",
+      "展示层用中文业务术语，代码层用驼峰 key",
+      "字段顺序：先身份后业务，先编码后名称，先金额后时间",
+      "每页至少 1 条预警/异常（超期、超信用、呆滞、驳回），让页面能讲出一个业务问题"
+    ]
+  },
+
+  "entities": {
+    "customer": {
+      "name": "客户",
+      "aliases": ["客户", "客户档案", "客户主数据", "customer"],
+      "codeRule": "CUS-年份-序号",
+      "codeKey": "code",
+      "fields": [
+        { "name": "客户编码", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "客户名称", "key": "name", "type": "text", "required": true },
+        { "name": "客户类型", "key": "type", "type": "enum", "options": ["直客", "渠道", "经销商"] },
+        { "name": "所属行业", "key": "industry", "type": "text" },
+        { "name": "信用额度", "key": "creditLimit", "type": "money", "align": "right", "precision": 2 },
+        { "name": "已用额度", "key": "creditUsed", "type": "money", "align": "right", "precision": 2 },
+        { "name": "可用额度", "key": "creditAvailable", "type": "money", "align": "right", "precision": 2 },
+        { "name": "信用状态", "key": "creditStatus", "type": "enum", "options": ["正常", "预警", "冻结"] },
+        { "name": "信用账期", "key": "creditDays", "type": "number", "unit": "天" },
+        { "name": "销售负责人", "key": "owner", "type": "person" },
+        { "name": "联系电话", "key": "phone", "type": "text" },
+        { "name": "收货地址", "key": "address", "type": "text" },
+        { "name": "近一年成交额", "key": "amount1y", "type": "money", "align": "right", "precision": 2 },
+        { "name": "最近成交时间", "key": "lastDealAt", "type": "date" },
+        { "name": "状态", "key": "status", "type": "enum", "options": ["潜在", "合作中", "暂停合作", "已终止"] }
+      ],
+      "listColumns": ["客户编码", "客户名称", "客户类型", "信用额度", "可用额度", "信用状态", "销售负责人", "最近成交时间", "状态"],
+      "statusMachine": {
+        "states": [
+          { "name": "潜在", "tone": "neutral" },
+          { "name": "合作中", "tone": "ok" },
+          { "name": "暂停合作", "tone": "warn" },
+          { "name": "已终止", "tone": "danger", "terminal": true }
+        ],
+        "initial": "潜在",
+        "transitions": [
+          { "from": "潜在", "to": "合作中", "action": "转合作" },
+          { "from": "合作中", "to": "暂停合作", "action": "暂停" },
+          { "from": "暂停合作", "to": "合作中", "action": "恢复" },
+          { "from": "暂停合作", "to": "已终止", "action": "终止" }
+        ]
+      },
+      "detailTabs": ["基本信息", "信用与账期", "成交记录", "变更记录"]
+    },
+
+    "supplier": {
+      "name": "供应商",
+      "aliases": ["供应商", "供应商档案", "supplier"],
+      "codeRule": "SUP-年份-序号",
+      "codeKey": "code",
+      "fields": [
+        { "name": "供应商编码", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "供应商简称", "key": "name", "type": "text", "required": true },
+        { "name": "供应商类型", "key": "type", "type": "enum", "options": ["生产", "贸易", "服务"] },
+        { "name": "准入状态", "key": "admitStatus", "type": "enum", "options": ["待准入", "合格", "观察", "淘汰"] },
+        { "name": "合作等级", "key": "level", "type": "enum", "options": ["战略", "核心", "普通"] },
+        { "name": "供应品类", "key": "category", "type": "text" },
+        { "name": "结算方式", "key": "settlement", "type": "enum", "options": ["月结30", "月结60", "货到付款", "预付"] },
+        { "name": "开票资质", "key": "invoiceType", "type": "enum", "options": ["专票", "普票"] },
+        { "name": "质量得分", "key": "qualityScore", "type": "number", "align": "right" },
+        { "name": "交付准时率", "key": "onTimeRate", "type": "number", "align": "right", "unit": "%" },
+        { "name": "最近合作时间", "key": "lastDealAt", "type": "date" },
+        { "name": "状态", "key": "status", "type": "enum", "options": ["启用", "停用"] }
+      ],
+      "listColumns": ["供应商编码", "供应商简称", "供应商类型", "准入状态", "合作等级", "质量得分", "交付准时率", "最近合作时间"],
+      "detailTabs": ["基本信息", "供应品类", "合作记录", "变更记录"]
+    },
+
+    "material": {
+      "name": "物料主数据",
+      "aliases": ["物料", "物料主数据", "物料档案", "material", "item"],
+      "codeRule": "MAT-年份-序号",
+      "codeKey": "code",
+      "fields": [
+        { "name": "物料编码", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "物料名称", "key": "name", "type": "text", "required": true },
+        { "name": "物料类型", "key": "type", "type": "enum", "options": ["成品", "半成品", "原材料", "辅料"] },
+        { "name": "规格型号", "key": "spec", "type": "text" },
+        { "name": "计量单位", "key": "unit", "type": "enum", "options": ["台", "件", "个", "kg", "m", "套"] },
+        { "name": "物料分组", "key": "group", "type": "text" },
+        { "name": "品牌", "key": "brand", "type": "text" },
+        { "name": "批次管理", "key": "batchManaged", "type": "bool" },
+        { "name": "序列号管理", "key": "snManaged", "type": "bool" },
+        { "name": "安全库存", "key": "safetyStock", "type": "number", "align": "right", "precision": 0 },
+        { "name": "最大库存", "key": "maxStock", "type": "number", "align": "right", "precision": 0 },
+        { "name": "库存数量", "key": "stock", "type": "number", "align": "right", "precision": 0 },
+        { "name": "可用库存", "key": "availableStock", "type": "number", "align": "right", "precision": 0 },
+        { "name": "库存金额", "key": "stockAmount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "采购提前期", "key": "leadTime", "type": "number", "unit": "天" },
+        { "name": "标准成本", "key": "stdCost", "type": "money", "align": "right", "precision": 2 },
+        { "name": "税率", "key": "taxRate", "type": "number", "align": "right" },
+        { "name": "变更版本", "key": "version", "type": "text" },
+        { "name": "状态", "key": "status", "type": "enum", "options": ["启用", "停用"] }
+      ],
+      "listColumns": ["物料编码", "物料名称", "物料类型", "规格型号", "计量单位", "库存数量", "安全库存", "库存金额", "状态"],
+      "statusMachine": {
+        "states": [
+          { "name": "启用", "tone": "ok" },
+          { "name": "停用", "tone": "neutral", "terminal": true }
+        ],
+        "initial": "启用",
+        "transitions": [
+          { "from": "启用", "to": "停用", "action": "停用" },
+          { "from": "停用", "to": "启用", "action": "启用" }
+        ]
+      },
+      "detailTabs": ["基本信息", "库存分布", "关联单据", "变更记录"]
+    },
+
+    "salesOrder": {
+      "name": "销售订单",
+      "aliases": ["销售订单", "订单", "sales order", "so"],
+      "codeRule": "SO-年月日-序号",
+      "codeKey": "code",
+      "archetypeHint": "A1",
+      "fields": [
+        { "name": "订单号", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "客户名称", "key": "customer", "type": "text", "required": true },
+        { "name": "客户编码", "key": "customerCode", "type": "code" },
+        { "name": "订单日期", "key": "orderDate", "type": "date", "required": true },
+        { "name": "约定交期", "key": "dueDate", "type": "date", "required": true },
+        { "name": "订单类型", "key": "type", "type": "enum", "options": ["标准", "样品", "返修"] },
+        { "name": "业务员", "key": "owner", "type": "person" },
+        { "name": "结算方式", "key": "settlement", "type": "enum", "options": ["月结30", "月结60", "款到发货"] },
+        { "name": "订单金额", "key": "amount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "不含税金额", "key": "amountExTax", "type": "money", "align": "right", "precision": 2 },
+        { "name": "税额", "key": "taxAmount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "优惠金额", "key": "discount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "订单状态", "key": "status", "type": "enum", "options": ["草稿", "待审核", "已确认", "生产中", "部分发货", "已发货", "已关闭"] },
+        { "name": "发货状态", "key": "shipStatus", "type": "enum", "options": ["未发货", "部分发货", "已发货"] },
+        { "name": "开票状态", "key": "invoiceStatus", "type": "enum", "options": ["未开票", "部分开票", "已开票"] },
+        { "name": "收款状态", "key": "payStatus", "type": "enum", "options": ["未收款", "部分收款", "已收清"] }
+      ],
+      "listColumns": ["订单号", "客户名称", "订单类型", "订单金额", "订单状态", "发货状态", "业务员", "订单日期", "约定交期"],
+      "statusMachine": {
+        "states": [
+          { "name": "草稿", "tone": "neutral" },
+          { "name": "待审核", "tone": "warn" },
+          { "name": "已确认", "tone": "brand" },
+          { "name": "生产中", "tone": "brand" },
+          { "name": "部分发货", "tone": "brand" },
+          { "name": "已发货", "tone": "ok" },
+          { "name": "已关闭", "tone": "neutral", "terminal": true },
+          { "name": "已驳回", "tone": "danger", "terminal": true },
+          { "name": "已取消", "tone": "neutral", "terminal": true }
+        ],
+        "initial": "草稿",
+        "transitions": [
+          { "from": "草稿", "to": "待审核", "action": "提交" },
+          { "from": "待审核", "to": "已确认", "action": "审核" },
+          { "from": "待审核", "to": "已驳回", "action": "驳回" },
+          { "from": "已确认", "to": "生产中", "action": "转生产" },
+          { "from": "生产中", "to": "部分发货", "action": "部分发货" },
+          { "from": "部分发货", "to": "已发货", "action": "发货" },
+          { "from": "已发货", "to": "已关闭", "action": "关闭" }
+        ]
+      },
+      "buttonRules": [
+        { "state": "草稿", "actions": ["提交", "编辑", "删除"] },
+        { "state": "待审核", "actions": ["审核", "驳回"] },
+        { "state": "已确认", "actions": ["转生产", "变更"] },
+        { "state": "已发货", "actions": ["开票", "对账"] }
+      ],
+      "detailLines": [
+        { "name": "行号", "key": "lineNo", "type": "number", "align": "center", "precision": 0 },
+        { "name": "物料编码", "key": "matCode", "type": "code" },
+        { "name": "物料名称", "key": "matName", "type": "text" },
+        { "name": "规格型号", "key": "spec", "type": "text" },
+        { "name": "数量", "key": "qty", "type": "number", "align": "right", "precision": 0 },
+        { "name": "单位", "key": "unit", "type": "text", "align": "center" },
+        { "name": "单价", "key": "price", "type": "money", "align": "right", "precision": 2 },
+        { "name": "金额", "key": "amount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "交期", "key": "dueDate", "type": "date", "align": "center" },
+        { "name": "已发数量", "key": "shippedQty", "type": "number", "align": "right", "precision": 0 }
+      ]
+    },
+
+    "purchaseRequest": {
+      "name": "采购申请单",
+      "aliases": ["采购申请", "采购申请单", "请购单", "purchase request", "pr"],
+      "codeRule": "PR-年份-月-序号",
+      "codeKey": "code",
+      "archetypeHint": "A2",
+      "fields": [
+        { "name": "申请单号", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "申请部门", "key": "dept", "type": "org", "required": true },
+        { "name": "申请人", "key": "applicant", "type": "person" },
+        { "name": "申请日期", "key": "applyDate", "type": "date", "required": true },
+        { "name": "需求到货日期", "key": "needDate", "type": "date", "required": true },
+        { "name": "采购类型", "key": "type", "type": "enum", "options": ["常规", "紧急", "项目"], "required": true },
+        { "name": "供应商建议", "key": "suggestSupplier", "type": "text" },
+        { "name": "币种", "key": "currency", "type": "enum", "options": ["CNY", "USD", "EUR"] },
+        { "name": "是否含税", "key": "taxIncluded", "type": "bool" },
+        { "name": "申请金额合计", "key": "amount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "审批状态", "key": "status", "type": "enum", "options": ["草稿", "待审批", "已审批", "已转采购单", "已关闭", "已驳回"] },
+        { "name": "用途说明", "key": "purpose", "type": "textarea" }
+      ],
+      "listColumns": ["申请单号", "申请部门", "申请人", "采购类型", "申请金额合计", "需求到货日期", "审批状态"],
+      "statusMachine": {
+        "states": [
+          { "name": "草稿", "tone": "neutral" },
+          { "name": "待审批", "tone": "warn" },
+          { "name": "已审批", "tone": "brand" },
+          { "name": "已转采购单", "tone": "ok" },
+          { "name": "已关闭", "tone": "neutral", "terminal": true },
+          { "name": "已驳回", "tone": "danger", "terminal": true }
+        ],
+        "initial": "草稿",
+        "transitions": [
+          { "from": "草稿", "to": "待审批", "action": "提交审批" },
+          { "from": "待审批", "to": "已审批", "action": "审批通过" },
+          { "from": "待审批", "to": "已驳回", "action": "驳回" },
+          { "from": "已审批", "to": "已转采购单", "action": "转采购单" },
+          { "from": "已转采购单", "to": "已关闭", "action": "关闭" }
+        ]
+      },
+      "detailLines": [
+        { "name": "行号", "key": "lineNo", "type": "number", "align": "center", "precision": 0 },
+        { "name": "物料编码", "key": "matCode", "type": "code" },
+        { "name": "物料名称", "key": "matName", "type": "text" },
+        { "name": "规格", "key": "spec", "type": "text" },
+        { "name": "需求数量", "key": "qty", "type": "number", "align": "right", "precision": 0 },
+        { "name": "单位", "key": "unit", "type": "text", "align": "center" },
+        { "name": "预估单价", "key": "price", "type": "money", "align": "right", "precision": 2 },
+        { "name": "预估金额", "key": "amount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "需求日期", "key": "needDate", "type": "date", "align": "center" },
+        { "name": "用途说明", "key": "purpose", "type": "text" }
+      ]
+    },
+
+    "inventory": {
+      "name": "库存",
+      "aliases": ["库存", "仓存", "库存台账", "inventory", "stock"],
+      "codeRule": "无独立编码，用 物料编码+仓库+批次",
+      "codeKey": "matCode",
+      "fields": [
+        { "name": "物料编码", "key": "matCode", "type": "code", "required": true },
+        { "name": "物料名称", "key": "matName", "type": "text", "required": true },
+        { "name": "仓库", "key": "warehouse", "type": "enum", "options": ["原料仓", "成品仓", "在途仓"] },
+        { "name": "批次号", "key": "batchNo", "type": "code" },
+        { "name": "库位", "key": "location", "type": "code" },
+        { "name": "账面数量", "key": "bookQty", "type": "number", "align": "right", "precision": 0 },
+        { "name": "可用数量", "key": "availableQty", "type": "number", "align": "right", "precision": 0 },
+        { "name": "锁定数量", "key": "lockedQty", "type": "number", "align": "right", "precision": 0 },
+        { "name": "在途数量", "key": "inTransitQty", "type": "number", "align": "right", "precision": 0 },
+        { "name": "安全库存", "key": "safetyStock", "type": "number", "align": "right", "precision": 0 },
+        { "name": "库存状态", "key": "status", "type": "enum", "options": ["充足", "预警", "低于安全", "呆滞"] },
+        { "name": "库龄", "key": "ageDays", "type": "number", "unit": "天", "align": "right" },
+        { "name": "库存金额", "key": "amount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "最近入库日期", "key": "lastInDate", "type": "date" }
+      ],
+      "listColumns": ["物料编码", "物料名称", "仓库", "批次号", "可用数量", "安全库存", "库存状态", "库龄", "库存金额"],
+      "statusMachine": {
+        "states": [
+          { "name": "充足", "tone": "ok" },
+          { "name": "预警", "tone": "warn" },
+          { "name": "低于安全", "tone": "danger" },
+          { "name": "呆滞", "tone": "purple" }
+        ],
+        "initial": "充足",
+        "transitions": [
+          { "from": "充足", "to": "预警", "action": "低于预警线" },
+          { "from": "预警", "to": "低于安全", "action": "低于安全库存" },
+          { "from": "低于安全", "to": "充足", "action": "补货入库" },
+          { "from": "充足", "to": "呆滞", "action": "超库龄标记" }
+        ]
+      }
+    },
+
+    "workOrder": {
+      "name": "生产工单",
+      "aliases": ["工单", "生产工单", "work order", "wo"],
+      "codeRule": "WO-年月日-序号",
+      "codeKey": "code",
+      "fields": [
+        { "name": "工单号", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "产品名称", "key": "product", "type": "text", "required": true },
+        { "name": "计划数量", "key": "planQty", "type": "number", "align": "right", "precision": 0 },
+        { "name": "已完工数量", "key": "doneQty", "type": "number", "align": "right", "precision": 0 },
+        { "name": "完工进度", "key": "progress", "type": "number", "align": "right", "unit": "%" },
+        { "name": "计划开工日期", "key": "planStart", "type": "date" },
+        { "name": "计划完工日期", "key": "planEnd", "type": "date" },
+        { "name": "实际开工日期", "key": "actualStart", "type": "date" },
+        { "name": "产线", "key": "line", "type": "text" },
+        { "name": "车间", "key": "workshop", "type": "text" },
+        { "name": "责任班组", "key": "team", "type": "text" },
+        { "name": "关联销售订单", "key": "soCode", "type": "code" },
+        { "name": "状态", "key": "status", "type": "enum", "options": ["待排产", "已排产", "生产中", "已完工", "已关闭"] }
+      ],
+      "listColumns": ["工单号", "产品名称", "计划数量", "已完工数量", "完工进度", "计划完工日期", "产线", "状态"],
+      "statusMachine": {
+        "states": [
+          { "name": "待排产", "tone": "warn" },
+          { "name": "已排产", "tone": "brand" },
+          { "name": "生产中", "tone": "brand" },
+          { "name": "已完工", "tone": "ok" },
+          { "name": "已关闭", "tone": "neutral", "terminal": true }
+        ],
+        "initial": "待排产",
+        "transitions": [
+          { "from": "待排产", "to": "已排产", "action": "排产" },
+          { "from": "已排产", "to": "生产中", "action": "开工" },
+          { "from": "生产中", "to": "已完工", "action": "完工报工" },
+          { "from": "已完工", "to": "已关闭", "action": "关闭" }
+        ]
+      }
+    },
+
+    "invoice": {
+      "name": "发票",
+      "aliases": ["发票", "应收", "应收发票", "invoice", "ar"],
+      "codeRule": "INV-年份-序号",
+      "codeKey": "code",
+      "fields": [
+        { "name": "发票号", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "发票类型", "key": "type", "type": "enum", "options": ["销项-专票", "销项-普票", "进项-专票", "进项-普票"] },
+        { "name": "开票日期", "key": "issueDate", "type": "date" },
+        { "name": "购方", "key": "buyer", "type": "text" },
+        { "name": "销方", "key": "seller", "type": "text" },
+        { "name": "金额", "key": "amount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "税额", "key": "taxAmount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "价税合计", "key": "total", "type": "money", "align": "right", "precision": 2 },
+        { "name": "开票状态", "key": "invoiceStatus", "type": "enum", "options": ["待开", "已开", "已作废"] },
+        { "name": "收款状态", "key": "payStatus", "type": "enum", "options": ["未收", "部分收", "已收清"] },
+        { "name": "已收金额", "key": "received", "type": "money", "align": "right", "precision": 2 },
+        { "name": "未收金额", "key": "unreceived", "type": "money", "align": "right", "precision": 2 },
+        { "name": "账期到期日", "key": "dueDate", "type": "date" },
+        { "name": "逾期天数", "key": "overdueDays", "type": "number", "align": "right", "unit": "天" }
+      ],
+      "listColumns": ["发票号", "发票类型", "购方", "价税合计", "开票状态", "收款状态", "未收金额", "账期到期日", "逾期天数"],
+      "statusMachine": {
+        "states": [
+          { "name": "待开", "tone": "warn" },
+          { "name": "已开", "tone": "ok" },
+          { "name": "已作废", "tone": "neutral", "terminal": true }
+        ],
+        "initial": "待开",
+        "transitions": [
+          { "from": "待开", "to": "已开", "action": "开票" },
+          { "from": "已开", "to": "已作废", "action": "作废" }
+        ]
+      }
+    },
+
+    "contract": {
+      "name": "合同",
+      "aliases": ["合同", "合同管理", "contract"],
+      "codeRule": "CT-年份-序号",
+      "codeKey": "code",
+      "fields": [
+        { "name": "合同编号", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "合同名称", "key": "name", "type": "text", "required": true },
+        { "name": "对方单位", "key": "counterparty", "type": "text", "required": true },
+        { "name": "合同类型", "key": "type", "type": "enum", "options": ["销售", "采购", "服务", "框架"] },
+        { "name": "签订日期", "key": "signDate", "type": "date" },
+        { "name": "生效日期", "key": "effectiveDate", "type": "date" },
+        { "name": "到期日期", "key": "expireDate", "type": "date" },
+        { "name": "合同金额", "key": "amount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "已执行金额", "key": "executed", "type": "money", "align": "right", "precision": 2 },
+        { "name": "执行进度", "key": "progress", "type": "number", "align": "right", "unit": "%" },
+        { "name": "结算方式", "key": "settlement", "type": "text" },
+        { "name": "责任人", "key": "owner", "type": "person" },
+        { "name": "续签提醒", "key": "renewNotice", "type": "date" },
+        { "name": "状态", "key": "status", "type": "enum", "options": ["拟定", "审批中", "履行中", "已完成", "已终止"] }
+      ],
+      "listColumns": ["合同编号", "合同名称", "对方单位", "合同类型", "合同金额", "已执行金额", "执行进度", "到期日期", "状态"],
+      "statusMachine": {
+        "states": [
+          { "name": "拟定", "tone": "neutral" },
+          { "name": "审批中", "tone": "warn" },
+          { "name": "履行中", "tone": "brand" },
+          { "name": "已完成", "tone": "ok", "terminal": true },
+          { "name": "已终止", "tone": "danger", "terminal": true }
+        ],
+        "initial": "拟定",
+        "transitions": [
+          { "from": "拟定", "to": "审批中", "action": "提交审批" },
+          { "from": "审批中", "to": "履行中", "action": "审批通过" },
+          { "from": "履行中", "to": "已完成", "action": "完成" },
+          { "from": "履行中", "to": "已终止", "action": "终止" }
+        ]
+      }
+    },
+
+    "employee": {
+      "name": "员工",
+      "aliases": ["员工", "员工档案", "组织", "employee", "hr"],
+      "codeRule": "EMP-年份-序号",
+      "codeKey": "code",
+      "fields": [
+        { "name": "工号", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "姓名", "key": "name", "type": "text", "required": true },
+        { "name": "部门", "key": "dept", "type": "org" },
+        { "name": "岗位", "key": "position", "type": "text" },
+        { "name": "直属上级", "key": "manager", "type": "person" },
+        { "name": "入职日期", "key": "hireDate", "type": "date" },
+        { "name": "司龄", "key": "tenure", "type": "number", "unit": "年", "align": "right" },
+        { "name": "用工性质", "key": "employmentType", "type": "enum", "options": ["正式", "实习", "外包"] },
+        { "name": "手机", "key": "phone", "type": "text" },
+        { "name": "邮箱", "key": "email", "type": "text" },
+        { "name": "成本中心", "key": "costCenter", "type": "text" },
+        { "name": "状态", "key": "status", "type": "enum", "options": ["在职", "试用", "离职"] }
+      ],
+      "listColumns": ["工号", "姓名", "部门", "岗位", "直属上级", "入职日期", "用工性质", "状态"],
+      "statusMachine": {
+        "states": [
+          { "name": "试用", "tone": "warn" },
+          { "name": "在职", "tone": "ok" },
+          { "name": "离职", "tone": "neutral", "terminal": true }
+        ],
+        "initial": "试用",
+        "transitions": [
+          { "from": "试用", "to": "在职", "action": "转正" },
+          { "from": "在职", "to": "离职", "action": "离职" }
+        ]
+      }
+    },
+
+    "approvalTask": {
+      "name": "审批待办",
+      "aliases": ["待办", "审批待办", "审批", "工作台", "approval", "task"],
+      "codeRule": "任务号取单据号，不额外编码",
+      "codeKey": "code",
+      "archetypeHint": "A5",
+      "fields": [
+        { "name": "任务号", "key": "taskNo", "type": "code" },
+        { "name": "单据类型", "key": "docType", "type": "enum", "options": ["采购申请单", "销售订单", "合同审批", "费用报销"] },
+        { "name": "单据编号", "key": "code", "type": "code", "required": true },
+        { "name": "摘要", "key": "title", "type": "text" },
+        { "name": "提交人", "key": "submitter", "type": "person" },
+        { "name": "提交时间", "key": "submittedAt", "type": "datetime" },
+        { "name": "当前节点", "key": "node", "type": "text" },
+        { "name": "剩余时限", "key": "remainHours", "type": "number", "unit": "小时" },
+        { "name": "紧急程度", "key": "urgency", "type": "enum", "options": ["普通", "紧急"] },
+        { "name": "金额", "key": "amount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "状态", "key": "status", "type": "enum", "options": ["待审批", "流转中", "已通过", "已驳回", "已转办"] }
+      ],
+      "listColumns": ["单据编号", "单据类型", "摘要", "提交人", "提交时间", "剩余时限", "紧急程度", "金额"],
+      "statusMachine": {
+        "states": [
+          { "name": "待审批", "tone": "warn" },
+          { "name": "流转中", "tone": "brand", "intermediate": true },
+          { "name": "已通过", "tone": "ok", "terminal": true },
+          { "name": "已驳回", "tone": "danger", "terminal": true },
+          { "name": "已转办", "tone": "purple", "terminal": true }
+        ],
+        "initial": "待审批",
+        "transitions": [
+          { "from": "待审批", "to": "流转中", "action": "同意" },
+          { "from": "待审批", "to": "已通过", "action": "同意" },
+          { "from": "待审批", "to": "已驳回", "action": "驳回" },
+          { "from": "待审批", "to": "已转办", "action": "转办" }
+        ],
+        "nodeFlow": ["申请人提交", "部门经理审核", "安全环保部复核", "生产总监批准", "归档生效"]
+      },
+      "defaultActions": [
+        { "name": "同意", "scope": "panel-footer", "primary": true, "allowedStates": ["待审批"] },
+        { "name": "驳回", "scope": "panel-footer", "confirm": true, "allowedStates": ["待审批"], "requiresInput": { "field": "审批意见", "required": true } },
+        { "name": "转办", "scope": "panel-footer", "allowedStates": ["待审批"], "requiresInput": { "field": "接收人", "required": true } }
+      ],
+      "defaultPermissions": [
+        { "rule": "提交人不可自审", "effect": "本人提交的单据隐藏同意/驳回/转办按钮" },
+        { "rule": "驳回必须填写原因", "effect": "意见为空时阻止提交并红字提示" }
+      ]
+    },
+
+    "project": {
+      "name": "项目",
+      "aliases": ["项目", "项目管理", "project"],
+      "codeRule": "PRJ-年份-序号",
+      "codeKey": "code",
+      "fields": [
+        { "name": "项目编号", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "项目名称", "key": "name", "type": "text", "required": true },
+        { "name": "客户", "key": "customer", "type": "text" },
+        { "name": "项目经理", "key": "manager", "type": "person" },
+        { "name": "合同额", "key": "contractAmount", "type": "money", "align": "right", "precision": 2 },
+        { "name": "已确认收入", "key": "recognized", "type": "money", "align": "right", "precision": 2 },
+        { "name": "成本", "key": "cost", "type": "money", "align": "right", "precision": 2 },
+        { "name": "毛利", "key": "grossProfit", "type": "money", "align": "right", "precision": 2 },
+        { "name": "毛利率", "key": "grossMargin", "type": "number", "align": "right", "unit": "%" },
+        { "name": "计划开始", "key": "planStart", "type": "date" },
+        { "name": "计划结束", "key": "planEnd", "type": "date" },
+        { "name": "进度", "key": "progress", "type": "number", "align": "right", "unit": "%" },
+        { "name": "风险等级", "key": "risk", "type": "enum", "options": ["高", "中", "低"] },
+        { "name": "状态", "key": "status", "type": "enum", "options": ["立项", "执行", "验收", "结项"] }
+      ],
+      "listColumns": ["项目编号", "项目名称", "客户", "项目经理", "合同额", "进度", "风险等级", "状态"],
+      "statusMachine": {
+        "states": [
+          { "name": "立项", "tone": "neutral" },
+          { "name": "执行", "tone": "brand" },
+          { "name": "验收", "tone": "warn" },
+          { "name": "结项", "tone": "ok", "terminal": true }
+        ],
+        "initial": "立项",
+        "transitions": [
+          { "from": "立项", "to": "执行", "action": "启动" },
+          { "from": "执行", "to": "验收", "action": "提交验收" },
+          { "from": "验收", "to": "结项", "action": "结项" }
+        ]
+      }
+    },
+
+    "statement": {
+      "name": "对账单",
+      "aliases": ["对账", "对账单", "台账", "statement"],
+      "codeRule": "STM-年份-月-序号",
+      "codeKey": "code",
+      "archetypeHint": "A6",
+      "fields": [
+        { "name": "对账单号", "key": "code", "type": "code", "required": true, "unique": true },
+        { "name": "客户", "key": "partner", "type": "text", "required": true },
+        { "name": "对账期间", "key": "period", "type": "text", "required": true },
+        { "name": "期初余额", "key": "openingBalance", "type": "money", "align": "right", "precision": 2 },
+        { "name": "本期应收", "key": "receivable", "type": "money", "align": "right", "precision": 2 },
+        { "name": "本期已收", "key": "received", "type": "money", "align": "right", "precision": 2 },
+        { "name": "期末余额", "key": "closingBalance", "type": "money", "align": "right", "precision": 2 },
+        { "name": "差异金额", "key": "diff", "type": "money", "align": "right", "precision": 2 },
+        { "name": "确认状态", "key": "status", "type": "enum", "options": ["待确认", "已确认", "有差异"] }
+      ],
+      "listColumns": ["对账单号", "客户", "对账期间", "期初余额", "本期应收", "本期已收", "期末余额", "确认状态"],
+      "statusMachine": {
+        "states": [
+          { "name": "待确认", "tone": "warn" },
+          { "name": "已确认", "tone": "ok", "terminal": true },
+          { "name": "有差异", "tone": "danger" }
+        ],
+        "initial": "待确认",
+        "transitions": [
+          { "from": "待确认", "to": "已确认", "action": "确认对账" },
+          { "from": "待确认", "to": "有差异", "action": "标记差异" },
+          { "from": "有差异", "to": "已确认", "action": "差异已处理" }
+        ]
+      },
+      "detailLines": [
+        { "name": "日期", "key": "date", "type": "date", "align": "center" },
+        { "name": "单号", "key": "code", "type": "code" },
+        { "name": "摘要", "key": "memo", "type": "text" },
+        { "name": "应收", "key": "receivable", "type": "money", "align": "right", "precision": 2 },
+        { "name": "已收", "key": "received", "type": "money", "align": "right", "precision": 2 },
+        { "name": "余额", "key": "balance", "type": "money", "align": "right", "precision": 2 }
+      ]
+    },
+
+    "access": {
+      "name": "用户权限",
+      "aliases": ["用户", "权限", "账号", "access", "user"],
+      "codeRule": "ACC-年份-序号",
+      "codeKey": "code",
+      "fields": [
+        { "name": "账号", "key": "account", "type": "text", "required": true, "unique": true },
+        { "name": "姓名", "key": "name", "type": "text", "required": true },
+        { "name": "所属组织", "key": "org", "type": "org" },
+        { "name": "角色", "key": "roles", "type": "tags", "options": ["管理员", "审批人", "录入员", "查看者"] },
+        { "name": "数据权限范围", "key": "dataScope", "type": "enum", "options": ["全公司", "本部门", "本人"] },
+        { "name": "可访问模块", "key": "modules", "type": "text" },
+        { "name": "最后登录时间", "key": "lastLoginAt", "type": "datetime" },
+        { "name": "最后登录 IP", "key": "lastLoginIp", "type": "text" },
+        { "name": "状态", "key": "status", "type": "enum", "options": ["启用", "禁用"] }
+      ],
+      "listColumns": ["账号", "姓名", "所属组织", "角色", "数据权限范围", "最后登录时间", "状态"],
+      "statusMachine": {
+        "states": [
+          { "name": "启用", "tone": "ok" },
+          { "name": "禁用", "tone": "neutral", "terminal": true }
+        ],
+        "initial": "启用",
+        "transitions": [
+          { "from": "启用", "to": "禁用", "action": "禁用" },
+          { "from": "禁用", "to": "启用", "action": "启用" }
+        ]
+      }
+    }
+  }
+}

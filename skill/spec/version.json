@@ -1,0 +1,69 @@
+{
+  "specVersion": "1.0",
+  "skillVersion": "1.3.0",
+  "releasedAt": "2026-10-12",
+  "meta": {
+    "purpose": "规范自身的版本与变更记录。产物头部声明它依赖的规范版本，避免「规范升级把老页面搞坏」这类最常见的事故。",
+    "rule": "产物只在头部声明；规范变更必须同时更新本文件的 changelog 与 skillVersion。"
+  },
+  "compat": {
+    "pageSpec": "1.0",
+    "archetypes": "1.0",
+    "recipes": "1.0",
+    "tokens": "1.0",
+    "skeletons": "1.0",
+    "uiTaxonomy": "1.0",
+    "components": "1.0"
+  },
+  "changelog": [
+    {
+      "version": "1.3.0",
+      "date": "2026-10-12",
+      "stage": "阶段二 · 契约层分层（第 ① 术语层 + 第 ② 组件契约层落地；第 ③ 渲染层不接入）",
+      "changes": [
+        "新增 spec/ui-taxonomy.json：术语层。以 Ant Design 命名体系为基准收 57 条术语（6 个族），每条带「可验证的识别依据 evidence」；与组件库无关，换库不失效",
+        "spec/page-spec.schema.json 的 page 块新增 regions（语义组件声明）与 nav（导航形态）两块；均声明为可缺省并由 archetype 推导，故对既有 PageSpec 无破坏",
+        "新增 build/check_taxonomy.py：术语层/契约层自洽性回归 17 项，含 archetypes.json 全部 28 个区域的可映射性覆盖检查",
+        "渲染实现层刻意未接入：产物仍是自绘单文件 HTML，render_mode 只登记 self 一种"
+      ]
+    },
+    {
+      "version": "1.2.0",
+      "date": "2026-10-05",
+      "stage": "阶段二 · 结构升级",
+      "changes": [
+        "新增 spec/recipes.json：14 类 ERP 实体的结构化字段配方（含列配置、状态机、明细行、按钮规则）",
+        "新增 spec/tokens.json：设计令牌结构化（色值/圆角/阴影/字号/间距/布局 + 状态语义映射 + 防坑规则）",
+        "新增 spec/version.json：规范版本与变更记录",
+        "新增 skill/skeletons/：与实体解耦的页面骨架模板 + 基础 CSS + 通用 JS 运行时",
+        "新增 build/forge.py：确定性生成器（吃 PageSpec → 渲染可运行单文件 HTML，同 spec 两次生成 diff 一致）",
+        "新增 build/reverse.py：反向工程入口（从一个已有页面抽出 PageSpec）",
+        "templates/*.html 头部增加「依赖规范版本」声明"
+      ]
+    },
+    {
+      "version": "1.1.0",
+      "date": "2026-10-05",
+      "stage": "阶段一 · 立刻可做",
+      "changes": [
+        "新增 spec/page-spec.schema.json：唯一生成输入的结构定义（含默认值的 provenance 出处枚举）",
+        "新增 spec/archetypes.json：A1–A6 必需元素与四类断言清单（验收契约，机器可执行）",
+        "SKILL.md 工作流插入两道闸门：生成前澄清回显（闸门 1）、生成后四类断言验收（闸门 3）",
+        "新增 build/verify_contract.py：通用契约断言引擎（不再写死自家产物）",
+        "新增 build/verify_acceptance.py：四类断言汇总 + 验收清单前置（--plan）",
+        "新增 build/build_report.py：验收报告渲染成零外链 HTML",
+        "build/serve_spa.py 增加验收探测页与 driver 库（交互/数据断言的执行层）"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-09-17",
+      "stage": "首版",
+      "changes": [
+        "SKILL.md + 6 份 references：原型库、字段配方、数据契约、设计令牌、质量清单、跨栈适配",
+        "A1–A6 六个零依赖示例页面 + 单文件演示门户",
+        "build/check_pages.py、render_check.py、portal_check.py 三道校验"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+<!-- ================= A2 · 单据表单页（骨架） =================
+     表头字段分组 + 明细行表格 + 自动合计 + 底部吸附动作条 + 必填校验。
+     明细行「数量 × 单价 = 金额」由运行时重算，合计随增删行实时更新。
+-->
+<div class="page-head">
+  <div>
+    <h1>{{PAGE_NAME}}</h1>
+    <div class="sub" id="pageSub">{{PAGE_SUB}}</div>
+  </div>
+  <div class="head-actions">{{HEAD_ACTIONS}}</div>
+</div>
+
+<div class="notice-bar">{{NOTICE}}</div>
+
+<div class="card">
+  <div class="card-h">单据信息</div>
+  <div class="card-b"><div class="form-grid" id="headFields">{{HEAD_FIELDS}}</div></div>
+</div>
+
+<div class="card">
+  <div class="card-h">
+    <span>明细信息<span class="muted" style="margin-left:8px">数量 × 单价 自动算金额</span></span>
+    <div class="right"><button class="btn btn-sm" id="addLine">+ 添加行</button></div>
+  </div>
+  <div class="tbl-wrap">
+    <table id="lineTable">
+      <thead><tr>{{LINE_HEAD}}<th class="c" style="width:64px">操作</th></tr></thead>
+      <tbody id="lineBody"></tbody>
+      <tfoot><tr>{{LINE_FOOT}}</tr></tfoot>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-h">附件与说明</div>
+  <div class="card-b">
+    <div class="fld" style="max-width:520px">
+      <label>备注</label>
+      <textarea data-key="memo" rows="3" placeholder="补充说明（选填）"></textarea>
+      <div class="err" data-err="memo"></div>
+    </div>
+  </div>
+</div>
+
+<div class="foot-bar">
+  <span class="sum" id="footSum"></span>
+  <div class="right">
+    {{FOOTER_ACTIONS}}
+  </div>
+</div>
+
+<script>
+(function () {
+  var M = window.__MODEL__;
+  var lines = M.lines.map(function (l) { return Object.assign({}, l); });
+
+  function numeric(v) {
+    var n = parseFloat(String(v === undefined || v === null ? '' : v).replace(/[,\s¥￥]/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function renderLines() {
+    var host = F.$('#lineBody');
+    if (!lines.length) {
+      host.innerHTML = '<tr><td colspan="' + (M.lineColumns.length + 1) + '">' +
+        '<div class="empty"><div class="box">∅</div>还没有明细行，点右上角「+ 添加行」开始录入</div></td></tr>';
+    } else {
+      host.innerHTML = lines.map(function (l, i) {
+        var tds = M.lineColumns.map(function (c) {
+          var cls = c.align === 'right' ? ' class="r num"' : (c.align === 'center' ? ' class="c"' : '');
+          if (c.editable) {
+            return '<td' + cls + '><input data-line="' + i + '" data-key="' + c.key + '" value="' +
+              (l[c.key] === undefined || l[c.key] === null ? '' : l[c.key]) + '" style="height:28px"></td>';
+          }
+          if (c.type === 'money') {
+            var attr = (c.key === M.amountKey) ? ' data-amount="' + i + '"' : '';
+            return '<td' + cls + attr + '>' + F.money(l[c.key]) + '</td>';
+          }
+          if (c.type === 'number') { return '<td' + cls + '>' + F.num(l[c.key], c.precision || 0) + (c.unit ? ' ' + c.unit : '') + '</td>'; }
+          return '<td' + cls + '>' + (l[c.key] === undefined || l[c.key] === null || l[c.key] === '' ? '—' : l[c.key]) + '</td>';
+        }).join('');
+        return '<tr>' + tds + '<td class="c"><button class="btn btn-sm btn-dg" data-del="' + i + '">删除</button></td></tr>';
+      }).join('');
+    }
+
+    F.$$('[data-line]', host).forEach(function (el) {
+      el.oninput = function () { recalc(); };
+    });
+    F.$$('[data-del]', host).forEach(function (b) {
+      b.onclick = function () {
+        lines.splice(parseInt(b.getAttribute('data-del'), 10), 1);
+        renderLines(); recalc();
+        F.toast('已删除该行');
+      };
+    });
+    recalc();
+  }
+
+  function recalc() {
+    if (!lines.length) { updateFoot(0, 0); return; }
+    F.$$('[data-line]', F.$('#lineBody')).forEach(function (el) {
+      var i = parseInt(el.getAttribute('data-line'), 10);
+      lines[i][el.getAttribute('data-key')] = el.value;
+    });
+    var sumQty = 0, sumAmt = 0;
+    lines.forEach(function (l) {
+      var qty = numeric(l[M.qtyKey]), price = numeric(l[M.priceKey]);
+      l[M.amountKey] = Math.round(qty * price * 100) / 100;
+      sumQty += qty; sumAmt += l[M.amountKey];
+    });
+    F.$$('[data-amount]', F.$('#lineBody')).forEach(function (td) {
+      var i = parseInt(td.getAttribute('data-amount'), 10);
+      td.textContent = F.money(lines[i][M.amountKey]);
+    });
+    updateFoot(sumQty, Math.round(sumAmt * 100) / 100);
+  }
+
+  function updateFoot(qty, amt) {
+    var q = F.$('#sumQty'), a = F.$('#sumAmt');
+    if (q) { q.textContent = F.num(qty, 0); }
+    if (a) { a.textContent = F.money(amt); }
+    F.$('#footSum').innerHTML = '合计数量 <b>' + F.num(qty, 0) + '</b> · 合计金额 <b>' + F.money(amt) + '</b>';
+  }
+
+  function collectHead() {
+    var out = {};
+    F.$$('[data-key]', F.$('#headFields')).forEach(function (el) { out[el.getAttribute('data-key')] = el.value.trim(); });
+    return out;
+  }
+
+  function validate(all) {
+    var bad = false;
+    F.$$('[data-err]', F.$('#headFields')).forEach(function (e) { e.textContent = ''; });
+    F.$$('input,select,textarea', F.$('#headFields')).forEach(function (el) { el.classList.remove('invalid'); });
+
+    M.headFields.forEach(function (f) {
+      if (!f.required) { return; }
+      var el = F.$('[data-key="' + f.key + '"]', F.$('#headFields'));
+      var err = F.$('[data-err="' + f.key + '"]', F.$('#headFields'));
+      if (!el || el.value.trim()) { return; }
+      bad = true;
+      el.classList.add('invalid');
+      if (err) { err.textContent = (f.control === 'select' ? '请选择' : '请填写') + f.name; }
+    });
+
+    if (all) {
+      if (!lines.length) {
+        bad = true;
+        F.toast('请至少录入一行明细后再提交');
+      }
+      var zero = lines.some(function (l) { return numeric(l[M.qtyKey]) <= 0; });
+      if (zero) { bad = true; F.toast('明细行的数量必须大于 0'); }
+    }
+    return !bad;
+  }
+
+  F.$('#addLine').onclick = function () {
+    var blank = {};
+    M.lineColumns.forEach(function (c) { blank[c.key] = c.editable ? '' : ''; });
+    blank[M.lineNoKey] = lines.length + 1;
+    if (M.lineDefaults) { Object.assign(blank, M.lineDefaults); }
+    lines.push(blank);
+    renderLines();
+    F.toast('已添加一行明细');
+  };
+
+  // 底部按钮来自 spec（FOOTER_ACTIONS），按 id 存在才挂事件 —— 自定义按钮组不会让脚本报错
+  var bDraft = F.$('#saveDraft');
+  if (bDraft) bDraft.onclick = function () {
+    if (!validate(false)) { F.toast('暂存前请先补全必填项'); return; }
+    F.toast('已暂存草稿（演示），未进入审批流');
+  };
+
+  var bSubmit = F.$('#submitBtn');
+  if (bSubmit) bSubmit.onclick = function () {
+    if (!validate(true)) { return; }
+    F.modal({
+      title: '提交审批确认',
+      note: '提交后单据进入审批流，审批期间不可编辑。',
+      fields: [{ key: 'memo', label: '提交说明（选填）', type: 'textarea' }],
+      confirmText: '确认提交'
+    }).then(function (v) {
+      if (!v) { return; }
+      F.$('#pageSub').innerHTML = '单据状态：<b>待审批</b> · 已提交，等待审批';
+      F.$$('#submitBtn,#saveDraft').forEach(function (b) { b.disabled = true; });
+      F.toast('已提交审批（演示），状态变更为「待审批」');
+    });
+  };
+
+  var bCancel = F.$('#cancelBtn');
+  if (bCancel) bCancel.onclick = function () {
+    F.modal({ title: '取消录入', note: '取消后未保存的内容将丢失。', confirmText: '确认取消', danger: true })
+      .then(function (v) { if (v) { F.toast('已取消（演示）'); } });
+  };
+
+  renderLines();
+})();
+</script>
